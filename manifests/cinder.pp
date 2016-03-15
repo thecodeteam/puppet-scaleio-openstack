@@ -11,7 +11,6 @@ class scaleio_openstack::cinder (
   $force_delete               = 'True',
   $round_volume_capacity      = 'True',
   $scaleio_cinder_config_file = '/etc/cinder/cinder_scaleio.config',
-  $scaleio_filter_file_path   = '/usr/share/cinder/rootwrap',
   $default_lvm_backend        = 'lvmdriver',
 )
 {
@@ -32,30 +31,18 @@ class scaleio_openstack::cinder (
       group => 'root',
     }
 
-    file {$scaleio_cinder_config_file:
+    file { $scaleio_cinder_config_file:
       ensure  => $ensure,
-      path    => $scaleio_cinder_config_file,
       content => template('cinder_scaleio.conf.erb'),
     } ->
     
-    file {'scaleio.py':
+    file { "${::cinder_path}/volume/drivers/emc/scaleio.py":
       ensure => $ensure,
-      path   => "${::cinder_path}/volume/drivers/emc/scaleio.py",
       source => 'puppet:///files/scaleio.py',
     } ->
   
-    file {'scaleio.filters':
+    scaleio_filter_file { 'cinder':
       ensure => $ensure,
-      path   => "${scaleio_filter_file_path}/scaleio.filters",
-      source => 'puppet:///files/scaleio.filters',
-    } ->
-    
-    ini_subsetting {'Ensure rootwrap path is in cinder config':
-      ensure               => present,
-      path                 => '/etc/cinder/rootwrap.conf',
-      section              => 'DEFAULT',
-      setting              => 'filters_path',
-      subsetting           => "${scaleio_filter_file_path}",
     } ->
     
     cinder_config {
