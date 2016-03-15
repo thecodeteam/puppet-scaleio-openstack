@@ -10,6 +10,22 @@ class scaleio_openstack
     path    => ['/usr/bin', '/bin'],
   }
 
+  define file_from_source(
+    $path,
+    $file_name = $name,
+  )
+  {
+    file { "${path}":
+      ensure => directory,
+      recurse => true,
+    } ->
+    
+    file { "${path}/${file_name}":
+      ensure => present,
+      source => "puppet:///modules/scaleio_openstack/${file_name}",
+    }
+  }
+
   define scaleio_filter_file(
     $ensure,
     $service    = $name,
@@ -17,10 +33,12 @@ class scaleio_openstack
     $file_name  = 'scaleio.filters',
   )
   {
-    file { "${path}/${file_name}":
-      ensure => $ensure,
-      source => "puppet:///files/${file_name}",
-    } ->
+
+    file_from_source {"${path}/${file_name}":
+      path => $path,
+      file_name => $file_name,
+    }
+    
     ini_subsetting { "Ensure rootwrap path is in ${service} config":
       ensure               => present,
       path                 => "/etc/${service}/rootwrap.conf",

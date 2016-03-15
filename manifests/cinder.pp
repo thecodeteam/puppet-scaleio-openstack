@@ -16,6 +16,8 @@ class scaleio_openstack::cinder (
 {
     notify {'Configure Cinder to use ScaleIO cluster': }
 
+    include cinder::params
+    
     $services_to_notify = [
       $cinder::params::api_service,
       $cinder::params::scheduler_service,
@@ -31,16 +33,19 @@ class scaleio_openstack::cinder (
       group => 'root',
     }
 
+    if ! $::cinder_path {
+      fail('Cinder is not installed on this node')
+    }
+
     file { $scaleio_cinder_config_file:
       ensure  => $ensure,
-      content => template('cinder_scaleio.conf.erb'),
+      content => template('scaleio_openstack/cinder_scaleio.conf.erb'),
+    } ->
+      
+    file_from_source {'scaleio.py':
+      path => "${::cinder_path}/volume/drivers/emc",
     } ->
     
-    file { "${::cinder_path}/volume/drivers/emc/scaleio.py":
-      ensure => $ensure,
-      source => 'puppet:///files/scaleio.py',
-    } ->
-  
     scaleio_filter_file { 'cinder':
       ensure => $ensure,
     } ->
