@@ -1,0 +1,29 @@
+{
+  "version": "1.0.0",
+  "author": "Alexey Morlang, EMC",
+  "name": "scaleio_openstack",
+  "summary": "Puppet library for configuration of Openstack to use Scaleio 2.0 cluster",
+  "license": "Apache License, Version 2.0",
+  "source": "https://github.com/cloudscaling/puppet-scaleio-openstack",
+  "project_page": "https://github.com/cloudscaling/puppet-scaleio-openstack",
+  "issues_url": "https://github.com/cloudscaling/puppet-scaleio-openstack/issues",
+  "dependencies": [
+    {"name": "puppetlabs-stdlib", "version_requirement": ">= 4.3.2"},
+    {"name": "puppetlabs-inifile", "version_requirement": ">= 1.0.0"},
+    {"name": "openstack/cinder", "version_requirement": ">= 6.0.0"},
+    {"name": "openstack/nova", "version_requirement": ">= 6.0.0"}
+  ],
+  "operatingsystem_support": [
+    {
+      "operatingsystemrelease": ["14"],
+      "operatingsystem": "Ubuntu"  
+    }
+  ],
+  "requirements": [
+    {
+      "version_requirement": ">= 3.7.4",
+      "name": "puppet"
+    }
+  ],
+  "tags": []
+}
