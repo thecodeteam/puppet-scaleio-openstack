@@ -1,20 +1,17 @@
 class scaleio_openstack
-{
-  File {
-      mode  => '0644',
-      owner => 'root',
-      group => 'root',
-  }
-    
-  Exec {
-    path    => ['/usr/bin', '/bin'],
-  }
-
+{    
+ 
   define file_from_source(
     $path,
     $file_name = $name,
   )
   {
+    File {
+      mode  => '0644',
+      owner => 'root',
+      group => 'root',
+    }
+
     file { "${path}":
       ensure => directory,
       recurse => true,

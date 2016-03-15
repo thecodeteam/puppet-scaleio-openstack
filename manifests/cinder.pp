@@ -27,12 +27,6 @@ class scaleio_openstack::cinder (
     # TODO: refactory to remove dublication with the code from volume_type.pp
     $pools_list = regsubst(join(flatten(zip($protection_domains, $storage_pools)), ':'), '(\w+):(\w+):', '\1:\2,', 'G') 
 
-    File {
-      mode  => '0644',
-      owner => 'root',
-      group => 'root',
-    }
-
     if ! $::cinder_path {
       fail('Cinder is not installed on this node')
     }

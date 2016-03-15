@@ -25,6 +25,9 @@ class scaleio_openstack::nova(
     setting              => 'volume_drivers',
     subsetting           => 'scaleio=nova.virt.libvirt.scaleiolibvirtdriver.LibvirtScaleIOVolumeDriver',
     subsetting_separator => ',',
-    notify               => Service[$nova::params::compute_service_name],
+  } ~>
+  
+  service { $nova::params::compute_service_name:
+    ensure => running,
   }
 }
