@@ -14,14 +14,9 @@ class scaleio_openstack::volume_type(
   $name_domain_pool_pairs = split(regsubst(join(zip($name_domain_pairs, $storage_pools), ':'), '(\w+):(\w+):(\w+):', '\1:\2:\3,', 'G'), ',')
   $types = split(regsubst(join(zip($name_domain_pool_pairs, $provisioning), ':'), '(\w+):(\w+):(\w+):(\w+):', '\1:\2:\3:\4,', 'G'), ',')
 
-  package { 'python-cinderclient':
-    ensure => installed,
-  }
-
   cinder_volume_type {$types:
     ensure => $ensure,
     value_in_title => true,
-    require => Package['python-cinderclient'],
   }
   
   if $qos_min_bws or $qos_max_bws {
@@ -32,7 +27,6 @@ class scaleio_openstack::volume_type(
     cinder_qos {$qos:
       ensure => $ensure,
       value_in_title => true,
-      require => Package['python-cinderclient'],
     }
   }
 }

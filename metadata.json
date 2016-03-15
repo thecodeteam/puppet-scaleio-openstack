@@ -1,7 +1,7 @@
 {
   "version": "1.0.0",
   "author": "Alexey Morlang, EMC",
-  "name": "scaleio_openstack",
+  "name": "emc-scaleio_openstack",
   "summary": "Puppet library for configuration of Openstack to use Scaleio 2.0 cluster",
   "license": "Apache License, Version 2.0",
   "source": "https://github.com/cloudscaling/puppet-scaleio-openstack",

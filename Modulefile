@@ -1,4 +1,4 @@
-name    'scaleio_openstack'
+name    'emc-scaleio_openstack'
 version '1.0.0'
 source 'UNKNOWN'
 author 'Alexey Morlang, EMC'

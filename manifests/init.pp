@@ -7,6 +7,12 @@ class scaleio_openstack
     $storage_pool = undef,
     $provisioning_type = undef,
     $value_in_title = false, # in case of true parameters should be in title in form of 'name:domain:pool:provisioning'
+   
+    # TODO: The following below parameters will be depricated in next version puppet-cinder and openstack
+    $os_password    = undef,
+    $os_tenant_name = 'admin',
+    $os_username    = 'admin',
+    $os_auth_url    = 'http://127.0.0.1:5000/v2.0/'    
   )
   {
     
@@ -25,27 +31,40 @@ class scaleio_openstack
       $provitioning = $provisioning_type
     }
     
-    $check_cmd = "bash -c 'source /root/openrc; cinder type-list |grep -q \" ${name} \"'"
+    Cinder::Type {
+      os_password     => $os_password,
+      os_tenant_name  => $os_tenant_name,
+      os_username     => $os_username,
+      os_auth_url     => $os_auth_url
+    }
 
-    
-    Exec {
-      path    => ['/usr/bin', '/bin'],
+    Cinder::Type_set {
+      os_password     => $os_password,
+      os_tenant_name  => $os_tenant_name,
+      os_username     => $os_username,
+      os_auth_url     => $os_auth_url
+    }
+
+    cinder::type {$name:
+      set_value => "${domain}",
+      set_key   => 'sio:pd_name'
+    }
+
+    cinder::type_set { "Set pool for ${name}":
+      type  => $name,
+      key   => 'sio:sp_name',
+      value => $pool
     }
     
-    if $ensure == present {
-      exec { "Create Cinder volume type \'${name}\'":
-        command => "bash -c 'source /root/openrc; cinder type-create ${name}'",
-        unless  => $check_cmd,
-     } ->
-     exec { "Create Cinder volume type extra specs for ${name}":
-        command => "bash -c 'source /root/openrc; cinder type-key ${name} set sio:pd_name=${domain} sio:provisioning=${provisioning} sio:sp_name=${pool}'",
-      }    
-    } else {
-      exec { "Delete Cinder volume type \'${name}\'":
-        command => "bash -c 'source /root/openrc; cinder type-delete ${name}'",
-        onlyif  => $check_cmd,
-     }
+    cinder::type_set { "Set pool for ${provisioning}":
+      type  => $name,
+      key   => 'sio:provisioning',
+      value => $provisioning
     }
+    
+    #TODO: implement absent after it appear in cinder or workaround here via cinder cli
+    #...
+    
   } # define cinder_volume_type
  
   define cinder_qos(
@@ -60,7 +79,8 @@ class scaleio_openstack
       path    => ['/usr/bin', '/bin'],
     }
 
-    #TODO
+    #TODO:
+    
   } # define cinder_qos
  
 } # class scaleio

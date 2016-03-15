@@ -1,10 +1,10 @@
 class scaleio_openstack::nova(
-  $ensure = present,
-) {
+  $ensure                   = present,
+  $scaleio_filter_file_path = '/usr/share/nova/rootwrap'
+)
+{
 
   notice("Configuring Compute node for ScaleIO integration")
-
-  $services_to_notify = ['openstack-nova-compute',]
 
   File {
       mode  => '0644',
@@ -14,22 +14,30 @@ class scaleio_openstack::nova(
 
   file { 'scaleiolibvirtdriver.py':
     ensure => $ensure,
-    path   => '/usr/lib/python2.6/site-packages/nova/virt/libvirt/scaleiolibvirtdriver.py',
+    path   => "${::nova_path}/virt/libvirt/scaleiolibvirtdriver.py",
     source => 'puppet:///files/scaleiolibvirtdriver.py',
-  }
+  } ->
 
   file { 'scaleio.filters':
     ensure => $ensure,
-    path   => '/usr/share/nova/rootwrap/scaleio.filters',
+    path   => "${scaleio_filter_file_path}/scaleio.filters",
     source => 'puppet:///files/scaleio.filters',
-  }
+  } ->
 
+  ini_subsetting {'Ensure rootwrap path is in nova config':
+    ensure               => present,
+    path                 => '/etc/nova/rootwrap.conf',
+    section              => 'DEFAULT',
+    setting              => 'filters_path',
+    subsetting           => "${scaleio_filter_file_path}",
+  } ->
+    
   ini_subsetting { 'scaleio_nova_config':
     ensure               => $ensure,
     path                 => '/etc/nova/nova.conf',
     section              => 'libvirt',
     setting              => 'volume_drivers',
     subsetting           => 'scaleio=nova.virt.libvirt.scaleiolibvirtdriver.LibvirtScaleIOVolumeDriver',
-    notify               => Service[$services_to_notify],
+    notify               => Service[$nova::params::compute_service_name],
   }
 }
