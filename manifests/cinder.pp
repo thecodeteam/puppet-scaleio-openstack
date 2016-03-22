@@ -16,12 +16,10 @@ class scaleio_openstack::cinder (
 {
     notify {'Configure Cinder to use ScaleIO cluster': }
 
-    include cinder::params
-    
     $services_to_notify = [
-      $cinder::params::api_service,
-      $cinder::params::scheduler_service,
-      $cinder::params::volume_service,
+      'cinder-api',
+      'cinder-scheduler',
+      'cinder-volume',
     ]
 
     # TODO: refactory to remove dublication with the code from volume_type.pp
@@ -44,15 +42,33 @@ class scaleio_openstack::cinder (
     
     scaleio_filter_file { 'cinder':
       ensure => $ensure,
+    } -> 
+
+		ini_setting { 'enabled_backends':
+      path    => '/etc/cinder/cinder.conf',
+      section => 'DEFAULT',
+		  setting => 'enabled_backends',
+		  value   => $enabled_backends,
+		} ->
+    ini_setting { 'volume_driver':
+      path    => '/etc/cinder/cinder.conf',
+      section => 'ScaleIO',
+      setting => 'volume_driver',
+      value   => 'cinder.volume.drivers.emc.scaleio.ScaleIODriver',
     } ->
-    
-    cinder_config {
-      'DEFAULT/enabled_backends':           value => $enabled_backends;
-      'ScaleIO/volume_driver':              ensure => $ensure, value => 'cinder.volume.drivers.emc.scaleio.ScaleIODriver';
-      'ScaleIO/cinder_scaleio_config_file': ensure => $ensure, value => $scaleio_cinder_config_file;
-      'ScaleIO/volume_backend_name':        ensure => $ensure, value => 'ScaleIO';
-    } ~>
-    
+    ini_setting { 'cinder_scaleio_config_file':
+      path    => '/etc/cinder/cinder.conf',
+      section => 'ScaleIO',
+      setting => 'cinder_scaleio_config_file',
+      value   => $scaleio_cinder_config_file,
+    } ->
+    ini_setting { 'volume_backend_name':
+      path    => '/etc/cinder/cinder.conf',
+      section => 'ScaleIO',
+      setting => 'volume_backend_name',
+      value   => 'ScaleIO',
+		} ~>
+		
     service { $services_to_notify:
       ensure => running,
     }

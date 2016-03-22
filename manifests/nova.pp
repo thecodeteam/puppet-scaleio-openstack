@@ -4,8 +4,6 @@ class scaleio_openstack::nova(
 {
   notify {'Configuring Compute node for ScaleIO integration': }
 
-  include nova::params
-
   if ! $::nova_path {
     fail('Nova is not installed on this node')
   }
@@ -27,7 +25,7 @@ class scaleio_openstack::nova(
     subsetting_separator => ',',
   } ~>
   
-  service { $nova::params::compute_service_name:
+  service { 'nova-compute':
     ensure => running,
   }
 }

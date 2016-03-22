@@ -13,9 +13,9 @@ class scaleio_openstack::volume_type(
   $os_username    = 'admin',
   $os_auth_url    = 'http://127.0.0.1:5000/v2.0/'
 )
-{
+{ /*
   # helper function to process an array of volume namse becaus of lack 'each function in puppet ver. 3.8<
-  define cinder_volume_type(
+   define cinder_volume_type(
     $ensure = present,
     $protection_domain = undef,
     $storage_pool = undef,
@@ -102,5 +102,5 @@ class scaleio_openstack::volume_type(
     os_tenant_name  => $os_tenant_name,
     os_username     => $os_username,
     os_auth_url     => $os_auth_url,
-  }
+  } */
 }
