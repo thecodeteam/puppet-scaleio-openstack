@@ -7,7 +7,7 @@ class scaleio_openstack::cinder (
   $gateway_port               = 4443,
   $protection_domains         = undef,
   $storage_pools              = undef,
-  $verify_server_certeficate  = 'False',
+  $verify_server_certificate  = 'False',
   $force_delete               = 'True',
   $round_volume_capacity      = 'True',
   $scaleio_cinder_config_file = '/etc/cinder/cinder_scaleio.config',
