@@ -1,12 +1,12 @@
 
 class scaleio_openstack::cinder (
   $ensure                     = present,    # could be present or absent
-  $gateway_user               = undef,
-  $gateway_password           = undef,
-  $gateway_ip                 = undef,
+  $gateway_user               = 'admin',
+  $gateway_password,
+  $gateway_ip,
   $gateway_port               = 4443,
-  $protection_domains         = undef,
-  $storage_pools              = undef,
+  $protection_domains,
+  $storage_pools,
   $verify_server_certificate  = 'False',
   $force_delete               = 'True',
   $round_volume_capacity      = 'True',
