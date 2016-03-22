@@ -22,14 +22,16 @@ class scaleio_openstack::cinder (
       $cinder::params::api_service,
       $cinder::params::scheduler_service,
       $cinder::params::volume_service,
-    ]    
+    ]
 
     # TODO: refactory to remove dublication with the code from volume_type.pp
-    $pools_list = regsubst(join(flatten(zip($protection_domains, $storage_pools)), ':'), '(\w+):(\w+):', '\1:\2,', 'G') 
+    $pools_list = regsubst(join(flatten(zip($protection_domains, $storage_pools)), ':'), '(\w+):(\w+):', '\1:\2,', 'G')
 
     if ! $::cinder_path {
       fail('Cinder is not installed on this node')
     }
+
+    $enabled_backends = $ensure ? { absent  => $default_lvm_backend, default => 'ScaleIO'}
 
     file { $scaleio_cinder_config_file:
       ensure  => $ensure,
@@ -45,14 +47,14 @@ class scaleio_openstack::cinder (
     } ->
     
     cinder_config {
-      'DEFAULT/enabled_backends':           value => $ensure ? { absent  => $default_lvm_backend, default => 'ScaleIO', };
-      'ScaleIO/volume_driver':              value => 'cinder.volume.drivers.emc.scaleio.ScaleIODriver', ensure => $ensure;
-      'ScaleIO/cinder_scaleio_config_file': value => $scaleio_cinder_config_file, ensure => $ensure;
-      'ScaleIO/volume_backend_name':        value => 'ScaleIO', ensure => $ensure;
+      'DEFAULT/enabled_backends':           value => $enabled_backends;
+      'ScaleIO/volume_driver':              ensure => $ensure, value => 'cinder.volume.drivers.emc.scaleio.ScaleIODriver';
+      'ScaleIO/cinder_scaleio_config_file': ensure => $ensure, value => $scaleio_cinder_config_file;
+      'ScaleIO/volume_backend_name':        ensure => $ensure, value => 'ScaleIO';
     } ~>
     
     service { $services_to_notify:
       ensure => running,
-    }            
- 
+    }
 } # class scaleio::cinder
+

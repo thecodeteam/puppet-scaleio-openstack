@@ -1,6 +1,5 @@
 class scaleio_openstack
-{    
- 
+{
   define file_from_source(
     $path,
     $file_name = $name,
@@ -12,8 +11,9 @@ class scaleio_openstack
       group => 'root',
     }
 
-    file { "${path}":
-      ensure => directory,
+    file { "Ensure directory ${path}":
+      ensure  => directory,
+      path    => $path,
       recurse => true,
     } ->
     
@@ -35,15 +35,15 @@ class scaleio_openstack
       path => $path,
       file_name => $file_name,
     }
-    
+
     ini_subsetting { "Ensure rootwrap path is in ${service} config":
       ensure               => present,
       path                 => "/etc/${service}/rootwrap.conf",
       section              => 'DEFAULT',
       setting              => 'filters_path',
-      subsetting           => "${path}",
+      subsetting           => $path,
       subsetting_separator => ',',
-    }    
+    }
   }
-   
 } # class scaleio
+

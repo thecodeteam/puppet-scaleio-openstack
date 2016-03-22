@@ -25,7 +25,7 @@ class scaleio_openstack::volume_type(
     $os_password    = undef,
     $os_tenant_name = undef,
     $os_username    = undef,
-    $os_auth_url    = undef, 
+    $os_auth_url    = undef,
   )
   {
     if $value_in_title {
@@ -77,7 +77,7 @@ class scaleio_openstack::volume_type(
     #...
     
   } # define cinder_volume_type
- 
+
   # todo: refactore to remove this ugly code converting several arrays into array of strings 'v1:v2:v3:v4'
   $domain_pool_pairs = zip($protection_domains, $storage_pools)
 

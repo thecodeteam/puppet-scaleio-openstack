@@ -2,7 +2,7 @@ class scaleio_openstack::nova(
   $ensure = present,
 )
 {
-  notify {"Configuring Compute node for ScaleIO integration": }
+  notify {'Configuring Compute node for ScaleIO integration': }
 
   include nova::params
 
