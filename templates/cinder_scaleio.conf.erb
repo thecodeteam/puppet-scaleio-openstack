@@ -1,11 +1,11 @@
 [scaleio]
-rest_server_ip = <% @gateway_ip %>
-rest_server_port = <% @gateway_port %>
-rest_server_username = <% @gateway_user %>
-rest_server_password = <% @gateway_password %>
-protection_domain_name = <% @protection_domains[0] %>
-storage_pools = <% @pools_list %>
-storage_pool_name = <% @storage_pools[0] %>
-round_volume_capacity = <% @round_volume_capacity %>
-force_delete = <% @force_delete %>
-verify_server_certificate = <% @verify_server_certificate %>
+rest_server_ip = <%= @gateway_ip %>
+rest_server_port = <%= @gateway_port %>
+rest_server_username = <%= @gateway_user %>
+rest_server_password = <%= @gateway_password %>
+protection_domain_name = <%= @default_protection_domain %>
+storage_pools = <%= @pools_list %>
+storage_pool_name = <%= @default_storage_pool %>
+round_volume_capacity = <%= @round_volume_capacity %>
+force_delete = <%= @force_delete %>
+verify_server_certificate = <%= @verify_server_certificate %>

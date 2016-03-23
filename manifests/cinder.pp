@@ -26,9 +26,13 @@ class scaleio_openstack::cinder (
     warning('Cinder is not installed on this node')
   }
   else {
-    $pools_list = regsubst(join(flatten(zip(split($protection_domains), split($storage_pools))), ':'), '(\w+):(\w+):', '\1:\2,', 'G')
+    $domains = split($protection_domains,',')
+    $pools = split($storage_pools,',')
+    $pools_list = regsubst(join(flatten(zip($domains, $pools)), ':'), '(\w+):(\w+):', '\1:\2,', 'G')
     $enabled_backends = $ensure ? { absent  => $default_lvm_backend, default => 'ScaleIO'}
 
+    $default_protection_domain = $domains[0]
+    $default_storage_pool = $pools[0]
     file { $scaleio_cinder_config_file:
       ensure  => $ensure,
       content => template('scaleio_openstack/cinder_scaleio.conf.erb'),
