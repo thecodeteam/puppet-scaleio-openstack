@@ -1,6 +1,7 @@
 class scaleio_openstack
 {
   define file_from_source(
+    $ensure,
     $path,
     $file_name = $name,
   )
@@ -16,9 +17,9 @@ class scaleio_openstack
       path    => $path,
       recurse => true,
     } ->
-    
+
     file { "${path}/${file_name}":
-      ensure => present,
+      ensure => $ensure,
       source => "puppet:///modules/scaleio_openstack/${file_name}",
     }
   }
@@ -32,6 +33,7 @@ class scaleio_openstack
   {
 
     file_from_source {"${path}/${file_name}":
+      ensure => $ensure,
       path => $path,
       file_name => $file_name,
     }
