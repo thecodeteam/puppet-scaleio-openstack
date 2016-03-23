@@ -38,13 +38,15 @@ class scaleio_openstack::cinder (
       content => template('scaleio_openstack/cinder_scaleio.conf.erb'),
     } ->
 
-    file_from_source {'scaleio.py':
-      ensure  => $ensure,
-      path => "${::cinder_path}/volume/drivers/emc",
+    file_from_source {'scaleio driver for cinder':
+      ensure    => $ensure,
+      dir       => "${::cinder_path}/volume/drivers/emc",
+      file_name => 'scaleio.py'
     } ->
 
-    scaleio_filter_file { 'cinder':
-      ensure => $ensure,
+    scaleio_filter_file { 'cinder filter file':
+      ensure  => $ensure,
+      service => 'cinder'
     } ->
 
     file { "Ensure directory has access: /bin/emc/scaleio":

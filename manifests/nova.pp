@@ -8,12 +8,14 @@ class scaleio_openstack::nova(
     warning('Nova is not installed on this node')
   }
   else {
-    file_from_source { 'scaleiolibvirtdriver.py':
-      ensure => $ensure,
-      path   => "${::nova_path}/virt/libvirt",
+    file_from_source { 'scaleio driver for nova':
+      ensure    => $ensure,
+      dir       => "${::nova_path}/virt/libvirt",
+      file_name => 'scaleiolibvirtdriver.py'
     } ->
-    scaleio_filter_file { 'nova':
-      ensure => $ensure,
+    scaleio_filter_file { 'nova filter file':
+      ensure  => $ensure,
+      service => 'nova'
     } ->
     ini_subsetting { 'scaleio_nova_config':
       ensure               => $ensure,

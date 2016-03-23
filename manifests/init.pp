@@ -2,39 +2,35 @@ class scaleio_openstack
 {
   define file_from_source(
     $ensure,
-    $path,
-    $file_name = $name,
+    $dir,
+    $file_name,
   )
   {
-    File {
+    file { "${dir}/${file_name}":
+      ensure => $ensure,
+      source => "puppet:///modules/scaleio_openstack/${file_name}",
       mode  => '0644',
       owner => 'root',
       group => 'root',
-    }
-
-    file { "Ensure directory ${path}":
-      ensure  => directory,
-      path    => $path,
-      recurse => true,
-    } ->
-
-    file { "${path}/${file_name}":
-      ensure => $ensure,
-      source => "puppet:///modules/scaleio_openstack/${file_name}",
     }
   }
 
   define scaleio_filter_file(
     $ensure,
-    $service    = $name,
-    $path       = "/usr/share/${service}/rootwrap",
+    $service,
     $file_name  = 'scaleio.filters',
   )
   {
+    $dir = "/usr/share/${service}/rootwrap"
+    $file_path = "${dir}/${file_name}"
+    # workarround becaouse puppet cant create recursively
+    file { ["/usr/share", "/usr/share/${service}", "/usr/share/${service}/rootwrap"]:
+      ensure  => directory,
+    } ->
 
-    file_from_source {"${path}/${file_name}":
-      ensure => $ensure,
-      path => $path,
+    file_from_source {$file_path:
+      ensure    => $ensure,
+      dir       => $dir,
       file_name => $file_name,
     }
 
@@ -43,7 +39,7 @@ class scaleio_openstack
       path                 => "/etc/${service}/rootwrap.conf",
       section              => 'DEFAULT',
       setting              => 'filters_path',
-      subsetting           => $path,
+      subsetting           => $file_path,
       subsetting_separator => ',',
     }
   }
