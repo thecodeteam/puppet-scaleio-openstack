@@ -14,42 +14,40 @@ class scaleio_openstack::cinder (
   $default_lvm_backend        = 'lvmdriver',
 )
 {
-    notify {'Configure Cinder to use ScaleIO cluster': }
+  notify {'Configure Cinder to use ScaleIO cluster': }
 
-    $services_to_notify = [
-      'cinder-api',
-      'cinder-scheduler',
-      'cinder-volume',
-    ]
+  $services_to_notify = [
+    'cinder-api',
+    'cinder-scheduler',
+    'cinder-volume',
+  ]
 
-    # TODO: refactory to remove dublication with the code from volume_type.pp
+  if ! $::cinder_path {
+    warning('Cinder is not installed on this node')
+  }
+  else {
     $pools_list = regsubst(join(flatten(zip($protection_domains, $storage_pools)), ':'), '(\w+):(\w+):', '\1:\2,', 'G')
-
-    if ! $::cinder_path {
-      fail('Cinder is not installed on this node')
-    }
-
     $enabled_backends = $ensure ? { absent  => $default_lvm_backend, default => 'ScaleIO'}
 
     file { $scaleio_cinder_config_file:
       ensure  => $ensure,
       content => template('scaleio_openstack/cinder_scaleio.conf.erb'),
     } ->
-      
+
     file_from_source {'scaleio.py':
       path => "${::cinder_path}/volume/drivers/emc",
     } ->
-    
+
     scaleio_filter_file { 'cinder':
       ensure => $ensure,
-    } -> 
+    } ->
 
-		ini_setting { 'enabled_backends':
+    ini_setting { 'enabled_backends':
       path    => '/etc/cinder/cinder.conf',
       section => 'DEFAULT',
-		  setting => 'enabled_backends',
-		  value   => $enabled_backends,
-		} ->
+      setting => 'enabled_backends',
+      value   => $enabled_backends,
+    } ->
     ini_setting { 'volume_driver':
       path    => '/etc/cinder/cinder.conf',
       section => 'ScaleIO',
@@ -67,10 +65,11 @@ class scaleio_openstack::cinder (
       section => 'ScaleIO',
       setting => 'volume_backend_name',
       value   => 'ScaleIO',
-		} ~>
-		
+    } ~>
+
     service { $services_to_notify:
       ensure => running,
     }
+  }
 } # class scaleio::cinder
 
