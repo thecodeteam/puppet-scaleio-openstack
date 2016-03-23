@@ -47,6 +47,12 @@ class scaleio_openstack::cinder (
       ensure => $ensure,
     } ->
 
+    file { "Ensure directory has access: /bin/emc/scaleio":
+      ensure  => directory,
+      path    => '/bin/emc/scaleio',
+      recurse => true,
+      mode  => '0755',
+    } ->
     ini_setting { 'enabled_backends':
       path    => '/etc/cinder/cinder.conf',
       section => 'DEFAULT',
