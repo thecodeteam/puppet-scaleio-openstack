@@ -11,7 +11,8 @@ class scaleio_openstack::nova(
     file_from_source { 'scaleio driver for nova':
       ensure    => $ensure,
       dir       => "${::nova_path}/virt/libvirt",
-      file_name => 'scaleiolibvirtdriver.py'
+      file_name => 'scaleiolibvirtdriver.py',
+      src_dir   => 'juno/nova'
     } ->
     scaleio_filter_file { 'nova filter file':
       ensure  => $ensure,
