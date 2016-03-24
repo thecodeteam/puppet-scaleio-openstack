@@ -33,6 +33,7 @@ class scaleio_openstack
       ensure    => $ensure,
       dir       => $dir,
       file_name => $file_name,
+      src_dir   => '.'
     }
 
     ini_subsetting { "Ensure rootwrap path is in ${service} config":

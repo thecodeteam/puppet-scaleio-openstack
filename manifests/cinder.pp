@@ -1,4 +1,3 @@
-
 class scaleio_openstack::cinder (
   $ensure                     = present,    # could be present or absent
   $gateway_user               = 'admin',
@@ -109,10 +108,14 @@ class scaleio_openstack::cinder (
       } ->
 
       # --- Kilo specific start
-      file { "Ensure directory present: ":
+      file { "Ensure managers directory present: ":
         ensure  => directory,
-        path    => '${::cinder_path}/volume/managers/emc',
-        recurse => true,
+        path    => "${::cinder_path}/volume/managers",
+        mode    => '0755',
+      } ->
+      file { "Ensure emc directory present: ":
+        ensure  => directory,
+        path    => "${::cinder_path}/volume/managers/emc",
         mode    => '0755',
       } ->
       file_from_source {'scaleio driver for cinder file 001':
@@ -165,7 +168,7 @@ class scaleio_openstack::cinder (
         mode  => '0755',
       } ->
       # --- Kilo specific start
-      ini_setting { 'enabled_backends':
+      ini_setting { 'change_volume_manager':
         path    => '/etc/cinder/cinder.conf',
         section => 'DEFAULT',
         setting => 'volume_manager',
@@ -210,4 +213,3 @@ class scaleio_openstack::cinder (
 
   }
 } # class scaleio::cinder
-
