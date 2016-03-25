@@ -169,6 +169,7 @@ class scaleio_openstack::cinder (
       } ->
       # --- Kilo specific start
       ini_setting { 'change_volume_manager':
+        ensure  => $ensure,
         path    => '/etc/cinder/cinder.conf',
         section => 'DEFAULT',
         setting => 'volume_manager',

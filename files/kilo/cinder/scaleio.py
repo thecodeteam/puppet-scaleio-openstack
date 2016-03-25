@@ -120,7 +120,7 @@ class ScaleIODriver(driver.VolumeDriver):
         LOG.info("storage pool name: %s" % self.storage_pool_name)
         self.storage_pool_id = self._get_storage_pool_id(self.config)
         LOG.info("storage pool id: %s" % self.storage_pool_id)
- 
+
         if (self.storage_pool_name == None and self.storage_pool_id == None):
             LOG.warning("No storage pool name or id was found, using default storage pool")
 #             self.storage_pool_name = 'Default'
@@ -133,7 +133,7 @@ class ScaleIODriver(driver.VolumeDriver):
 #             raise RuntimeError("Must specify protection domain name or id")
         if (self.protection_domain_name != None and self.protection_domain_id != None):
             raise RuntimeError("Cannot specify both protection domain name and protection domain id")
-    
+
     def _find_sdc_binary(self):
         """
         Locate the ScaleIO client executable. This executable is run by the following
@@ -194,7 +194,7 @@ class ScaleIODriver(driver.VolumeDriver):
 
     def _get_rest_server_ip(self, config):
         try:
-            server_ip = config.get(CONFIG_SECTION_NAME, 'rest_server_ip')            
+            server_ip = config.get(CONFIG_SECTION_NAME, 'rest_server_ip')
             if server_ip == '' or server_ip is None:
                 LOG.debug("REST Server IP not found")
             return server_ip
@@ -204,7 +204,7 @@ class ScaleIODriver(driver.VolumeDriver):
     def _get_rest_server_port(self, config):
         warn_msg = "REST port is not set, using default 443"
         try:
-            server_port = config.get(CONFIG_SECTION_NAME, 'rest_server_port')            
+            server_port = config.get(CONFIG_SECTION_NAME, 'rest_server_port')
             if server_port == '' or server_port is None:
                 LOG.warning(warn_msg)
                 server_port = '443'
@@ -1124,11 +1124,11 @@ class ScaleIODriver(driver.VolumeDriver):
         # We need to make sure we even *have* a local path
         LOG.info("ScaleIO attach volume in scaleio cinder driver")
         volname = self.id_to_base64(volume.id)
-        
+
         cmd = [self.sdc_cmd]
         cmd += ["--query_guid"]
         LOG.info("ScaleIO sdc query guid command: "+str(cmd))
-        
+
         try:
             (out, err) = utils.execute(*cmd, run_as_root=True)
             LOG.info("map volume %s: stdout=%s stderr=%s" % (cmd, out, err))
@@ -1136,13 +1136,13 @@ class ScaleIODriver(driver.VolumeDriver):
             msg = ("Error querying sdc guid: %s" % (e.stderr))
             LOG.error(msg)
             raise exception.VolumeBackendAPIException(data=msg)  
-        
+
         guid = out
         msg = ("Current sdc guid: %s" % (guid))
-        LOG.info(msg)        
+        LOG.info(msg)
 
         params = {'guid' : guid}
-        
+
         volume_id = self._get_volume_id(volname)
         headers = {'content-type': 'application/json'}
         request = "https://" + self.server_ip + ":" + self.server_port + "/api/instances/Volume::" + str(volume_id) + "/action/addMappedSdc"
@@ -1154,7 +1154,7 @@ class ScaleIODriver(driver.VolumeDriver):
         r = requests.post(request, data=json.dumps(params), headers=headers, auth=(self.server_username, self.server_token), verify=verify_cert)
         r = self._check_response(r, request, 'post', headers=headers, req_data=params)
 #         LOG.info("map volume response: %s" % r.text)
-        
+
         if (r.status_code != OK_STATUS_CODE):
             response = r.json()
             error_code = response['errorCode']
@@ -1165,7 +1165,7 @@ class ScaleIODriver(driver.VolumeDriver):
                 msg = ("Error mapping volume %s: %s" % (volname, response['message']))
                 LOG.error(msg)
                 raise exception.VolumeBackendAPIException(data=msg)     
-        
+
 #       convert id to hex  
 #         val = int(volume_id)
 #         id_in_hex = hex((val + (1 << 64)) % (1 << 64))
@@ -1177,11 +1177,11 @@ class ScaleIODriver(driver.VolumeDriver):
     def _detach_sio_volume(self, volume, sdc_ip):
         LOG.info("ScaleIO detach volume in scaleio cinder driver")
         volname = self.id_to_base64(volume.id)
-        
+
         cmd = [self.sdc_cmd]
         cmd += ["--query_guid"]
         LOG.info("ScaleIO sdc query guid command: "+str(cmd))
-        
+
         try:
             (out, err) = utils.execute(*cmd, run_as_root=True)
             LOG.info("map volume %s: stdout=%s stderr=%s" % (cmd, out, err))
@@ -1189,10 +1189,10 @@ class ScaleIODriver(driver.VolumeDriver):
             msg = ("Error querying sdc guid: %s" % (e.stderr))
             LOG.error(msg)
             raise exception.VolumeBackendAPIException(data=msg)  
-        
+
         guid = out
         msg = ("Current sdc guid: %s" % (guid))
-        LOG.info(msg)        
+        LOG.info(msg)
 
         params = {'guid' : guid}
         headers = {'content-type': 'application/json'}
