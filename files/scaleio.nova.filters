@@ -1,0 +1,5 @@
+[Filters]
+drv_cfg: CommandFilter, /bin/emc/scaleio/drv_cfg, root
+
+# nova/virt/libvirt/sio_utils.py: 'partprobe', device_path
+partprobe: CommandFilter, partprobe, root

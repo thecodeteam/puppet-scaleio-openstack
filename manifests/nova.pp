@@ -1,5 +1,11 @@
 class scaleio_openstack::nova(
-  $ensure = present,
+  $ensure              = present,
+  $gateway_user        = admin,
+  $gateway_password    = undef,
+  $gateway_ip          = undef,
+  $gateway_port        = 4443,
+  $protection_domains  = undef,
+  $storage_pools       = undef,
 )
 {
   notify {'Configuring Compute node for ScaleIO integration': }
@@ -87,7 +93,7 @@ class scaleio_openstack::nova(
         file_name => 'scaleiolibvirtdriver.py',
         src_dir   => 'kilo/nova'
       } ->
-      ini_setting { 'scaleio_nova_config':
+      ini_setting { 'scaleio_nova_compute_config compute_driver':
         ensure  => $ensure,
         path    => '/etc/nova/nova-compute.conf',
         section => 'DEFAULT',
@@ -95,6 +101,28 @@ class scaleio_openstack::nova(
         value   => 'nova.virt.libvirt.drivers.emc.driver.EMCLibvirtDriver',
       } ->
 
+      file { '/tmp/2015.1.2.diff':
+        source => 'puppet:///modules/scaleio_openstack/kilo/nova/2015.1.2.diff'
+      } ->
+      exec { 'nova patch':
+        onlyif => "test ${ensure} == present && patch -p 2 -i /tmp/2015.1.2.diff -d ${::nova_path} -b -f --dry-run",
+        command => "patch -p 2 -i /root/2015.1.2.diff -d ${::nova_path} -b",
+        path => '/bin:/usr/bin',
+      } ->
+      exec { 'nova un-patch':
+        onlyif => "test ${ensure} == absent && patch -p 2 -i /tmp/2015.1.2.diff -d ${::nova_path} -b -R -f --dry-run",
+        command => "patch -p 2 -i /root/2015.1.2.diff -d ${::nova_path} -b -R",
+        path => '/bin:/usr/bin',
+      } ->
+      nova_config { 'nova config for Kilo':
+        ensure => $ensure,
+        gateway_user => $gateway_user,
+        gateway_password => $gateway_password,
+        gateway_ip => $gateway_ip,
+        gateway_port => $gateway_port,
+        protection_domains => $protection_domains,
+        storage_pools => $storage_pools,
+      } ->
       scaleio_filter_file { 'nova filter file':
         ensure  => $ensure,
         service => 'nova'
@@ -107,5 +135,89 @@ class scaleio_openstack::nova(
     else {
       fail("Version $version too high and isn't supported.")
     }
+  }
+}
+
+
+define scaleio_openstack::nova_config(
+  $ensure              = present,
+  $gateway_user        = admin,
+  $gateway_password    = undef,
+  $gateway_ip          = undef,
+  $gateway_port        = 4443,
+  $protection_domains  = undef,
+  $storage_pools       = undef,
+) {
+  ini_setting { 'scaleio_nova_compute_config use_cow_images':
+    ensure  => $ensure,
+    path    => '/etc/nova/nova-compute.conf',
+    section => 'DEFAULT',
+    setting => 'use_cow_images',
+    value   => 'False',
+  } ->
+  ini_setting { 'scaleio_nova_compute_config force_raw_images':
+    ensure  => $ensure,
+    path    => '/etc/nova/nova-compute.conf',
+    section => 'DEFAULT',
+    setting => 'force_raw_images',
+    value   => 'False',
+  } ->
+  ini_setting { 'scaleio_nova_compute_config images_type':
+    ensure  => $ensure,
+    path    => '/etc/nova/nova-compute.conf',
+    section => 'libvirt',
+    setting => 'images_type',
+    value   => 'sio',
+  } ->
+  ini_setting { 'scaleio_nova_compute_config rest_server_ip':
+    ensure  => $ensure,
+    path    => '/etc/nova/nova-compute.conf',
+    section => 'scaleio',
+    setting => 'rest_server_ip',
+    value   => $gateway_ip,
+  } ->
+  ini_setting { 'scaleio_nova_compute_config rest_server_port':
+    ensure  => $ensure,
+    path    => '/etc/nova/nova-compute.conf',
+    section => 'scaleio',
+    setting => 'rest_server_port',
+    value   => $gateway_port,
+  } ->
+  ini_setting { 'scaleio_nova_compute_config rest_server_username':
+    ensure  => $ensure,
+    path    => '/etc/nova/nova-compute.conf',
+    section => 'scaleio',
+    setting => 'rest_server_username',
+    value   => $gateway_user,
+  } ->
+  ini_setting { 'scaleio_nova_compute_config rest_server_password':
+    ensure  => $ensure,
+    path    => '/etc/nova/nova-compute.conf',
+    section => 'scaleio',
+    setting => 'rest_server_password',
+    value   => $gateway_port,
+  } ->
+  ini_setting { 'scaleio_nova_compute_config protection_domain_name':
+    ensure  => $ensure,
+    path    => '/etc/nova/nova-compute.conf',
+    section => 'scaleio',
+    # TODO: domain or domains?
+    setting => 'protection_domain_name',
+    value   => $protection_domains,
+  } ->
+  ini_setting { 'scaleio_nova_compute_config storage_pool_name':
+    ensure  => $ensure,
+    path    => '/etc/nova/nova-compute.conf',
+    section => 'scaleio',
+    # TODO: pool or pools?
+    setting => 'storage_pool_name',
+    value   => $storage_pools,
+  } ->
+  ini_setting { 'scaleio_nova_compute_config default_sdcguid':
+    ensure  => $ensure,
+    path    => '/etc/nova/nova-compute.conf',
+    section => 'scaleio',
+    setting => 'default_sdcguid',
+    value   => $::sdc_guid,
   }
 }

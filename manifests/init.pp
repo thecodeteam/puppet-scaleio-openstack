@@ -19,12 +19,12 @@ class scaleio_openstack
   define scaleio_filter_file(
     $ensure,
     $service,
-    $file_name  = 'scaleio.filters',
   )
   {
+    $file_name = "scaleio.${service}.filters"
     $dir = "/usr/share/${service}/rootwrap"
     $file_path = "${dir}/${file_name}"
-    # workarround becaouse puppet cant create recursively
+    # workarround because puppet cant create recursively
     file { ["/usr/share", "/usr/share/${service}", "/usr/share/${service}/rootwrap"]:
       ensure  => directory,
     } ->
