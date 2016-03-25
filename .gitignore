@@ -1,5 +1,4 @@
 pkg/*
-*.tar.gz
 spec/fixtures/modules
 .vagrant
 .project
