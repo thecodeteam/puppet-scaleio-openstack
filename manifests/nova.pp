@@ -46,7 +46,7 @@ class scaleio_openstack::nova(
       } ->
 
       file { '/tmp/2014.2.2.diff':
-        source => 'puppet:///modules/scaleio_openstack/kilo/nova/2014.2.2.diff'
+        source => 'puppet:///modules/scaleio_openstack/juno/nova/2014.2.2.diff'
       } ->
       exec { 'nova patch':
         onlyif => "test ${ensure} = present && patch -p 2 -i /tmp/2014.2.2.diff -d ${::nova_path} -b -f --dry-run",
