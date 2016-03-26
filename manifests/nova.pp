@@ -36,10 +36,6 @@ class scaleio_openstack::nova(
         file_name => 'scaleiolibvirtdriver.py',
         src_dir   => 'juno/nova'
       } ->
-      scaleio_filter_file { 'nova filter file':
-        ensure  => $ensure,
-        service => 'nova'
-      } ->
       ini_subsetting { 'scaleio_nova_config':
         ensure               => $ensure,
         path                 => '/etc/nova/nova.conf',
@@ -47,6 +43,33 @@ class scaleio_openstack::nova(
         setting              => 'volume_drivers',
         subsetting           => 'scaleio=nova.virt.libvirt.scaleiolibvirtdriver.LibvirtScaleIOVolumeDriver',
         subsetting_separator => ',',
+      } ->
+
+      file { '/tmp/2014.2.2.diff':
+        source => 'puppet:///modules/scaleio_openstack/kilo/nova/2014.2.2.diff'
+      } ->
+      exec { 'nova patch':
+        onlyif => "test ${ensure} = present && patch -p 2 -i /tmp/2014.2.2.diff -d ${::nova_path} -b -f --dry-run",
+        command => "patch -p 2 -i /tmp/2014.2.2.diff -d ${::nova_path} -b",
+        path => '/bin:/usr/bin',
+      } ->
+      exec { 'nova un-patch':
+        onlyif => "test ${ensure} = absent && patch -p 2 -i /tmp/2014.2.2.diff -d ${::nova_path} -b -R -f --dry-run",
+        command => "patch -p 2 -i /tmp/2014.2.2.diff -d ${::nova_path} -b -R",
+        path => '/bin:/usr/bin',
+      } ->
+      nova_config { 'nova config for Juno':
+        ensure => $ensure,
+        gateway_user => $gateway_user,
+        gateway_password => $gateway_password,
+        gateway_ip => $gateway_ip,
+        gateway_port => $gateway_port,
+        protection_domains => $protection_domains,
+        storage_pools => $storage_pools,
+      } ->
+      scaleio_filter_file { 'nova filter file':
+        ensure  => $ensure,
+        service => 'nova'
       } ~>
       service { 'nova-compute':
         ensure => running,
@@ -106,12 +129,12 @@ class scaleio_openstack::nova(
       } ->
       exec { 'nova patch':
         onlyif => "test ${ensure} = present && patch -p 2 -i /tmp/2015.1.2.diff -d ${::nova_path} -b -f --dry-run",
-        command => "patch -p 2 -i /root/2015.1.2.diff -d ${::nova_path} -b",
+        command => "patch -p 2 -i /tmp/2015.1.2.diff -d ${::nova_path} -b",
         path => '/bin:/usr/bin',
       } ->
       exec { 'nova un-patch':
         onlyif => "test ${ensure} = absent && patch -p 2 -i /tmp/2015.1.2.diff -d ${::nova_path} -b -R -f --dry-run",
-        command => "patch -p 2 -i /root/2015.1.2.diff -d ${::nova_path} -b -R",
+        command => "patch -p 2 -i /tmp/2015.1.2.diff -d ${::nova_path} -b -R",
         path => '/bin:/usr/bin',
       } ->
       nova_config { 'nova config for Kilo':

@@ -357,7 +357,7 @@ index 8655b48..d0597c6 100644
 +        self.path = self.driver.connect_volume(vol_name=vol_name)
 +
 +    def snapshot_extract(self, target, out_format):
-+        images.convert_image(self.path, target, 'raw', out_format,
++        images.convert_image(self.path, target, out_format,
 +                             run_as_root=True)
 +
 +    def create_snap(self, name):
