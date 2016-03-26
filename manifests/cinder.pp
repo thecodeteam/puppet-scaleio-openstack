@@ -29,6 +29,8 @@ class scaleio_openstack::cinder (
     $pools = split($storage_pools,',')
     $pools_list = regsubst(join(flatten(zip($domains, $pools)), ':'), '(\w+):(\w+):', '\1:\2,', 'G')
     $enabled_backends = $ensure ? { absent  => $default_lvm_backend, default => 'ScaleIO'}
+    $default_protection_domain = $domains[0]
+    $default_storage_pool = $pools[0]
 
     $version = $::cinder_version
     if versioncmp($version, '2014.2.0') < 0 {
@@ -37,9 +39,6 @@ class scaleio_openstack::cinder (
     elsif versioncmp($version, '2015.1.0') < 0 {
       notify { "Detected cinder version $version - treat as Juno":; }
 
-
-      $default_protection_domain = $domains[0]
-      $default_storage_pool = $pools[0]
       file { $scaleio_cinder_config_file:
         ensure  => $ensure,
         content => template('scaleio_openstack/cinder_scaleio.conf.erb'),
@@ -93,15 +92,10 @@ class scaleio_openstack::cinder (
       service { $services_to_notify:
         ensure => running,
       }
-
-
     }
     elsif versioncmp($version, '2015.2.0') < 0 {
       notify { "Detected cinder version $version - treat as Kilo":; }
 
-
-      $default_protection_domain = $domains[0]
-      $default_storage_pool = $pools[0]
       file { $scaleio_cinder_config_file:
         ensure  => $ensure,
         content => template('scaleio_openstack/cinder_scaleio.conf.erb'),
@@ -204,13 +198,10 @@ class scaleio_openstack::cinder (
       service { $services_to_notify:
         ensure => running,
       }
-
-
     }
     else {
       fail("Version $version too high and isn't supported.")
     }
-
-
   }
 } # class scaleio::cinder
+

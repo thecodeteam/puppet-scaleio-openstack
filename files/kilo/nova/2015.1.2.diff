@@ -492,7 +492,7 @@ diff --git a/nova/virt/libvirt/sio_utils.py b/nova/virt/libvirt/sio_utils.py
 index e69de29..1b3e433 100644
 --- a/nova/virt/libvirt/sio_utils.py
 +++ b/nova/virt/libvirt/sio_utils.py
-@@ -0,0 +1,411 @@
+@@ -0,0 +1,410 @@
 +# Copyright (c) 2015 EMC Corporation
 +# All Rights Reserved
 +#
@@ -801,8 +801,7 @@ index e69de29..1b3e433 100644
 +
 +        # TODO(emc): Error checking???
 +        # Convert images
-+        info = images.qemu_img_info(source)
-+        images.convert_image(source, dest, info.file_format, 'raw',
++        images.convert_image(source, dest, 'raw',
 +                             run_as_root=True)
 +        LOG.info(_LI("SIODriver --> Imported source image %s to %s with format"
 +                     " raw for ScaleIO") % (source, dest))

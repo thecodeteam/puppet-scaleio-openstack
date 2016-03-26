@@ -105,12 +105,12 @@ class scaleio_openstack::nova(
         source => 'puppet:///modules/scaleio_openstack/kilo/nova/2015.1.2.diff'
       } ->
       exec { 'nova patch':
-        onlyif => "test ${ensure} == present && patch -p 2 -i /tmp/2015.1.2.diff -d ${::nova_path} -b -f --dry-run",
+        onlyif => "test ${ensure} = present && patch -p 2 -i /tmp/2015.1.2.diff -d ${::nova_path} -b -f --dry-run",
         command => "patch -p 2 -i /root/2015.1.2.diff -d ${::nova_path} -b",
         path => '/bin:/usr/bin',
       } ->
       exec { 'nova un-patch':
-        onlyif => "test ${ensure} == absent && patch -p 2 -i /tmp/2015.1.2.diff -d ${::nova_path} -b -R -f --dry-run",
+        onlyif => "test ${ensure} = absent && patch -p 2 -i /tmp/2015.1.2.diff -d ${::nova_path} -b -R -f --dry-run",
         command => "patch -p 2 -i /root/2015.1.2.diff -d ${::nova_path} -b -R",
         path => '/bin:/usr/bin',
       } ->
@@ -140,11 +140,11 @@ class scaleio_openstack::nova(
 
 
 define scaleio_openstack::nova_config(
-  $ensure              = present,
-  $gateway_user        = admin,
+  $ensure              = undef,
+  $gateway_user        = undef,
   $gateway_password    = undef,
   $gateway_ip          = undef,
-  $gateway_port        = 4443,
+  $gateway_port        = undef,
   $protection_domains  = undef,
   $storage_pools       = undef,
 ) {
@@ -195,7 +195,7 @@ define scaleio_openstack::nova_config(
     path    => '/etc/nova/nova-compute.conf',
     section => 'scaleio',
     setting => 'rest_server_password',
-    value   => $gateway_port,
+    value   => $gateway_password,
   } ->
   ini_setting { 'scaleio_nova_compute_config protection_domain_name':
     ensure  => $ensure,
