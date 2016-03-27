@@ -15,7 +15,8 @@ class scaleio_openstack::nova(
   }
   else {
 
-    $version = $::nova_version
+    $version_str = split($::nova_version, '-')
+    $version = $version_str[0]
     if versioncmp($version, '2014.2.0') < 0 {
       fail("Version $version too small and isn't supported.")
     }
@@ -45,17 +46,17 @@ class scaleio_openstack::nova(
         subsetting_separator => ',',
       } ->
 
-      file { '/tmp/2014.2.2.diff':
-        source => 'puppet:///modules/scaleio_openstack/juno/nova/2014.2.2.diff'
+      file { "/tmp/${version}.diff":
+        source => "puppet:///modules/scaleio_openstack/juno/nova/${version}.diff"
       } ->
       exec { 'nova patch':
-        onlyif => "test ${ensure} = present && patch -p 2 -i /tmp/2014.2.2.diff -d ${::nova_path} -b -f --dry-run",
-        command => "patch -p 2 -i /tmp/2014.2.2.diff -d ${::nova_path} -b",
+        onlyif => "test ${ensure} = present && patch -p 2 -i /tmp/${version}.diff -d ${::nova_path} -b -f --dry-run",
+        command => "patch -p 2 -i /tmp/${version}.diff -d ${::nova_path} -b",
         path => '/bin:/usr/bin',
       } ->
       exec { 'nova un-patch':
-        onlyif => "test ${ensure} = absent && patch -p 2 -i /tmp/2014.2.2.diff -d ${::nova_path} -b -R -f --dry-run",
-        command => "patch -p 2 -i /tmp/2014.2.2.diff -d ${::nova_path} -b -R",
+        onlyif => "test ${ensure} = absent && patch -p 2 -i /tmp/${version}.diff -d ${::nova_path} -b -R -f --dry-run",
+        command => "patch -p 2 -i /tmp/${version}.diff -d ${::nova_path} -b -R",
         path => '/bin:/usr/bin',
       } ->
       nova_config { 'nova config for Juno':
