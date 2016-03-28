@@ -143,15 +143,15 @@ class scaleio_openstack::nova(
         command => "patch -p 2 -i /tmp/2015.1.2.diff -d ${::nova_path} -b -R",
         path => '/bin:/usr/bin',
       } ->
-#      nova_config { 'nova config for Kilo':
-#        ensure => $ensure,
-#        gateway_user => $gateway_user,
-#        gateway_password => $gateway_password,
-#        gateway_ip => $gateway_ip,
-#        gateway_port => $gateway_port,
-#        protection_domains => $protection_domains,
-#        storage_pools => $storage_pools,
-#      } ->
+      nova_config { 'nova config for Kilo':
+        ensure => $ensure,
+        gateway_user => $gateway_user,
+        gateway_password => $gateway_password,
+        gateway_ip => $gateway_ip,
+        gateway_port => $gateway_port,
+        protection_domains => $protection_domains,
+        storage_pools => $storage_pools,
+      } ->
       scaleio_filter_file { 'nova filter file':
         ensure  => $ensure,
         service => 'nova'
