@@ -1,4 +1,4 @@
-define nova_config(
+define nova_common(
   $ensure              = undef,
   $gateway_user        = undef,
   $gateway_password    = undef,
@@ -6,7 +6,40 @@ define nova_config(
   $gateway_port        = undef,
   $protection_domains  = undef,
   $storage_pools       = undef,
+  $siolib_file         = undef,
+  $nova_patch          = undef,
 ) {
+  file { "/tmp/${siolib_file}":
+    source => "puppet:///modules/scaleio_openstack/juno/${siolib_file}"
+  } ->
+  package { ['python-pip']:
+    ensure => present,
+  } ->
+  package { 'siolib':
+    ensure => $ensure,
+    provider => 'pip',
+    source => "file:///tmp/${siolib_file}
+  } ->
+
+  scaleio_filter_file { 'nova filter file':
+    ensure  => $ensure,
+    service => 'nova'
+  } ->
+
+  file { "/tmp/${nova_patch}":
+    source => "puppet:///modules/scaleio_openstack/kilo/nova/${nova_patch}"
+  } ->
+  exec { 'nova patch':
+    onlyif => "test ${ensure} = present && patch -p 2 -i /tmp/${nova_patch} -d ${::nova_path} -b -f --dry-run",
+    command => "patch -p 2 -i /tmp/${nova_patch} -d ${::nova_path} -b",
+    path => '/bin:/usr/bin',
+  } ->
+  exec { 'nova un-patch':
+    onlyif => "test ${ensure} = absent && patch -p 2 -i /tmp/${nova_patch} -d ${::nova_path} -b -R -f --dry-run",
+    command => "patch -p 2 -i /tmp/${nova_patch} -d ${::nova_path} -b -R",
+    path => '/bin:/usr/bin',
+  } ->
+
   ini_setting { 'scaleio_nova_compute_config use_cow_images':
     ensure  => $ensure,
     path    => '/etc/nova/nova-compute.conf',

@@ -23,17 +23,18 @@ class scaleio_openstack::nova(
     elsif versioncmp($version, '2015.1.0') < 0 {
       notify { "Detected nova version $version - treat as Juno":; }
 
-      file { '/tmp/siolib-1.2.5.tar.gz':
-        source => 'puppet:///modules/scaleio_openstack/juno/siolib-1.2.5.tar.gz'
-      } ->
-      package { ['python-pip']:
-        ensure => present,
-      } ->
-      package { 'siolib':
+      nova_common { 'nova common for Juno':
         ensure => $ensure,
-        provider => 'pip',
-        source => 'file:///tmp/siolib-1.2.5.tar.gz'
+        gateway_user => $gateway_user,
+        gateway_password => $gateway_password,
+        gateway_ip => $gateway_ip,
+        gateway_port => $gateway_port,
+        protection_domains => $protection_domains,
+        storage_pools => $storage_pools,
+        siolib_file => 'siolib-1.2.5.tar.gz',
+        nova_patch => "${version}.diff",
       } ->
+
       file_from_source { 'scaleio driver for nova':
         ensure    => $ensure,
         dir       => "${::nova_path}/virt/libvirt",
@@ -47,34 +48,8 @@ class scaleio_openstack::nova(
         setting              => 'volume_drivers',
         subsetting           => 'scaleio=nova.virt.libvirt.scaleiolibvirtdriver.LibvirtScaleIOVolumeDriver',
         subsetting_separator => ',',
-      } ->
-
-      file { "/tmp/${version}.diff":
-        source => "puppet:///modules/scaleio_openstack/juno/nova/${version}.diff"
-      } ->
-      exec { 'nova patch':
-        onlyif => "test ${ensure} = present && patch -p 2 -i /tmp/${version}.diff -d ${::nova_path} -b -f --dry-run",
-        command => "patch -p 2 -i /tmp/${version}.diff -d ${::nova_path} -b",
-        path => '/bin:/usr/bin',
-      } ->
-      exec { 'nova un-patch':
-        onlyif => "test ${ensure} = absent && patch -p 2 -i /tmp/${version}.diff -d ${::nova_path} -b -R -f --dry-run",
-        command => "patch -p 2 -i /tmp/${version}.diff -d ${::nova_path} -b -R",
-        path => '/bin:/usr/bin',
-      } ->
-      nova_config { 'nova config for Juno':
-        ensure => $ensure,
-        gateway_user => $gateway_user,
-        gateway_password => $gateway_password,
-        gateway_ip => $gateway_ip,
-        gateway_port => $gateway_port,
-        protection_domains => $protection_domains,
-        storage_pools => $storage_pools,
-      } ->
-      scaleio_filter_file { 'nova filter file':
-        ensure  => $ensure,
-        service => 'nova'
       } ~>
+
       service { 'nova-compute':
         ensure => running,
       }
@@ -83,17 +58,18 @@ class scaleio_openstack::nova(
     elsif versioncmp($version, '2015.2.0') < 0 {
       notify { "Detected nova version $version - treat as Kilo":; }
 
-      file { '/tmp/siolib-1.3.5.tar.gz':
-        source => 'puppet:///modules/scaleio_openstack/kilo/siolib-1.3.5.tar.gz'
-      } ->
-      package { ['python-pip']:
-        ensure => present,
-      } ->
-      package { 'siolib':
+      nova_common { 'nova common for Kilo':
         ensure => $ensure,
-        provider => 'pip',
-        source => 'file:///tmp/siolib-1.3.5.tar.gz'
+        gateway_user => $gateway_user,
+        gateway_password => $gateway_password,
+        gateway_ip => $gateway_ip,
+        gateway_port => $gateway_port,
+        protection_domains => $protection_domains,
+        storage_pools => $storage_pools,
+        siolib_file => 'siolib-1.3.5.tar.gz',
+        nova_patch => "${version}.diff",
       } ->
+
       file { ["${::nova_path}/virt/libvirt/drivers", "${::nova_path}/virt/libvirt/drivers/emc"]:
         ensure  => directory,
         mode    => '0755',
@@ -128,34 +104,8 @@ class scaleio_openstack::nova(
         section => 'DEFAULT',
         setting => 'compute_driver',
         value   => 'nova.virt.libvirt.drivers.emc.driver.EMCLibvirtDriver',
-      } ->
-
-      file { '/tmp/2015.1.2.diff':
-        source => 'puppet:///modules/scaleio_openstack/kilo/nova/2015.1.2.diff'
-      } ->
-      exec { 'nova patch':
-        onlyif => "test ${ensure} = present && patch -p 2 -i /tmp/2015.1.2.diff -d ${::nova_path} -b -f --dry-run",
-        command => "patch -p 2 -i /tmp/2015.1.2.diff -d ${::nova_path} -b",
-        path => '/bin:/usr/bin',
-      } ->
-      exec { 'nova un-patch':
-        onlyif => "test ${ensure} = absent && patch -p 2 -i /tmp/2015.1.2.diff -d ${::nova_path} -b -R -f --dry-run",
-        command => "patch -p 2 -i /tmp/2015.1.2.diff -d ${::nova_path} -b -R",
-        path => '/bin:/usr/bin',
-      } ->
-      nova_config { 'nova config for Kilo':
-        ensure => $ensure,
-        gateway_user => $gateway_user,
-        gateway_password => $gateway_password,
-        gateway_ip => $gateway_ip,
-        gateway_port => $gateway_port,
-        protection_domains => $protection_domains,
-        storage_pools => $storage_pools,
-      } ->
-      scaleio_filter_file { 'nova filter file':
-        ensure  => $ensure,
-        service => 'nova'
       } ~>
+
       service { 'nova-compute':
         ensure => running,
       }
