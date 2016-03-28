@@ -1,4 +1,4 @@
-define nova_common(
+define scaleio_openstack::nova_common(
   $ensure              = undef,
   $gateway_user        = undef,
   $gateway_password    = undef,
@@ -6,11 +6,12 @@ define nova_common(
   $gateway_port        = undef,
   $protection_domains  = undef,
   $storage_pools       = undef,
+  $openstack_version   = undef
   $siolib_file         = undef,
   $nova_patch          = undef,
 ) {
   file { "/tmp/${siolib_file}":
-    source => "puppet:///modules/scaleio_openstack/juno/${siolib_file}"
+    source => "puppet:///modules/scaleio_openstack/${openstack_version}/${siolib_file}"
   } ->
   package { ['python-pip']:
     ensure => present,
@@ -18,7 +19,7 @@ define nova_common(
   package { 'siolib':
     ensure => $ensure,
     provider => 'pip',
-    source => "file:///tmp/${siolib_file}
+    source => "file:///tmp/${siolib_file}"
   } ->
 
   scaleio_filter_file { 'nova filter file':
@@ -27,7 +28,7 @@ define nova_common(
   } ->
 
   file { "/tmp/${nova_patch}":
-    source => "puppet:///modules/scaleio_openstack/kilo/nova/${nova_patch}"
+    source => "puppet:///modules/scaleio_openstack/${openstack_version}/nova/${nova_patch}"
   } ->
   exec { 'nova patch':
     onlyif => "test ${ensure} = present && patch -p 2 -i /tmp/${nova_patch} -d ${::nova_path} -b -f --dry-run",

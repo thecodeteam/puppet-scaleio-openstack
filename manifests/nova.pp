@@ -31,6 +31,7 @@ class scaleio_openstack::nova(
         gateway_port => $gateway_port,
         protection_domains => $protection_domains,
         storage_pools => $storage_pools,
+        openstack_version => 'juno',
         siolib_file => 'siolib-1.2.5.tar.gz',
         nova_patch => "${version}.diff",
       } ->
@@ -66,6 +67,7 @@ class scaleio_openstack::nova(
         gateway_port => $gateway_port,
         protection_domains => $protection_domains,
         storage_pools => $storage_pools,
+        openstack_version => 'kilo',
         siolib_file => 'siolib-1.3.5.tar.gz',
         nova_patch => "${version}.diff",
       } ->
