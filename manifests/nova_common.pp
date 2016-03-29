@@ -6,7 +6,7 @@ define scaleio_openstack::nova_common(
   $gateway_port        = undef,
   $protection_domains  = undef,
   $storage_pools       = undef,
-  $openstack_version   = undef
+  $openstack_version   = undef,
   $siolib_file         = undef,
   $nova_patch          = undef,
 ) {
