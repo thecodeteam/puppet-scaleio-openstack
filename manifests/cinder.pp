@@ -51,7 +51,7 @@ class scaleio_openstack::cinder (
         ensure => running,
       }
     }
-    elsif $version_array[1] == '2015' and $version_array[1] == '1' {
+    elsif $version_array[0] == '2015' and $version_array[1] == '1' {
       notify { "Detected cinder version $version - treat as Kilo": }
 
       file { "Ensure managers directory present: ":
