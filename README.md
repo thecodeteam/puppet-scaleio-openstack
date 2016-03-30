@@ -2,9 +2,8 @@
 
 ## Overview
 
-A Puppet module that updates OpenStack to work with ScaleIO 2.0 block storage
-
-Most aspects of configuration of ScaleIO have been brought into Puppet.
+A Puppet module that updates OpenStack to work with ScaleIO 2.0 block storage.
+Provides supports for volumes and ephemeral storages including live migration and resize.
 
 ## Setup
 
@@ -22,6 +21,7 @@ Most aspects of configuration of ScaleIO have been brought into Puppet.
 * ScaleIO 2.0
 * Ubuntu 14.04
 * Linux kernel 4.2.0-30-generic
+* OpenStack Juno, Kilo, Liberty
 
 ### Setup Requirements
 
