@@ -1,5 +1,38 @@
-# puppet-scaleio-openstack
-Puppets for configuration of Openstack to use ScaleIO as a storage backend.
+# ScaleIO for OpenStack plugin
+
+## Overview
+
+A Puppet module that updates OpenStack to work with ScaleIO 2.0 block storage
+
+Most aspects of configuration of ScaleIO have been brought into Puppet.
+
+## Setup
+
+### What Puppet-ScaleIO affects
+
+* Adds rootwrap filters
+* Modifies nova.conf and nova-compute.conf
+* Patches nova python files
+* Modifies cinder.conf
+* Patches cinder python files
+
+### Tested with
+
+* Puppet 3.7.2+
+* ScaleIO 2.0
+* Ubuntu 14.04
+* Linux kernel 4.2.0-30-generic
+
+### Setup Requirements
+
+Requires nova-compute and/or cinder installed on the node along with ScaleIO SDC.
+
+### Beginning with scaleio
+  ```
+  puppet module install cloudscaling-scaleio_openstack
+  ```
+
+## Structure and specifics
 
 There are 4 manifests:
   * cinder.pp - installs scaleio cinder driver, updates cinder services configurations and notifies services
@@ -7,8 +40,8 @@ There are 4 manifests:
   * volume_type.pp - create volume type for provided domains and storage pools
   * qos.pp - create QoS rules for volumes
 
-Examples:
-
+## Usage example
+  ```
   class {'scaleio_openstack::cinder':
     ensure              => present,
     gateway_ip          => '192.168.1.10',
@@ -31,3 +64,4 @@ Examples:
   class {'scaleio_openstack::nova':
     ensure => present,
   }
+  ```
