@@ -32,76 +32,28 @@ class scaleio_openstack::cinder (
     $default_protection_domain = $domains[0]
     $default_storage_pool = $pools[0]
 
-    $version = $::cinder_version
-    if versioncmp($version, '2014.2.0') < 0 {
-      fail("Version $version too small and isn't supported.")
-    }
-    elsif versioncmp($version, '2015.1.0') < 0 {
-      notify { "Detected cinder version $version - treat as Juno":; }
+    $version_str = split($::cinder_version, '-')
+    $version = $version_str[0]
+    $version_array = split($version, '\.')
+    
+    if $version_array[0] == '2014' and $version_array[1] == '2' {
+      notify { "Detected cinder version $version - treat as Juno": }
 
-      file { $scaleio_cinder_config_file:
-        ensure  => $ensure,
-        content => template('scaleio_openstack/cinder_scaleio.conf.erb'),
-      } ->
-
-      # --- Juno specific start
       file_from_source {'scaleio driver for cinder':
         ensure    => $ensure,
         dir       => "${::cinder_path}/volume/drivers/emc",
         file_name => 'scaleio.py',
         src_dir   => 'juno/cinder'
       } ->
-      # --- Juno specific start
 
-      scaleio_filter_file { 'cinder filter file':
-        ensure  => $ensure,
-        service => 'cinder'
-      } ->
-
-      file { "Ensure directory has access: /bin/emc/scaleio":
-        ensure  => directory,
-        path    => '/bin/emc/scaleio',
-        recurse => true,
-        mode  => '0755',
-      } ->
-      ini_setting { 'enabled_backends':
-        path    => '/etc/cinder/cinder.conf',
-        section => 'DEFAULT',
-        setting => 'enabled_backends',
-        value   => $enabled_backends,
-      } ->
-      ini_setting { 'volume_driver':
-        path    => '/etc/cinder/cinder.conf',
-        section => 'ScaleIO',
-        setting => 'volume_driver',
-        value   => 'cinder.volume.drivers.emc.scaleio.ScaleIODriver',
-      } ->
-      ini_setting { 'cinder_scaleio_config_file':
-        path    => '/etc/cinder/cinder.conf',
-        section => 'ScaleIO',
-        setting => 'cinder_scaleio_config_file',
-        value   => $scaleio_cinder_config_file,
-      } ->
-      ini_setting { 'volume_backend_name':
-        path    => '/etc/cinder/cinder.conf',
-        section => 'ScaleIO',
-        setting => 'volume_backend_name',
-        value   => 'ScaleIO',
-      } ~>
-
+      patch_common { 'patch juno cinder conf': } ~>
       service { $services_to_notify:
         ensure => running,
       }
     }
-    elsif versioncmp($version, '2015.2.0') < 0 {
-      notify { "Detected cinder version $version - treat as Kilo":; }
+    elsif $version_array[1] == '2015' and $version_array[1] == '1' {
+      notify { "Detected cinder version $version - treat as Kilo": }
 
-      file { $scaleio_cinder_config_file:
-        ensure  => $ensure,
-        content => template('scaleio_openstack/cinder_scaleio.conf.erb'),
-      } ->
-
-      # --- Kilo specific start
       file { "Ensure managers directory present: ":
         ensure  => directory,
         path    => "${::cinder_path}/volume/managers",
@@ -148,20 +100,6 @@ class scaleio_openstack::cinder (
         file_name => 'swift_client.py',
         src_dir   => 'kilo/cinder'
       } ->
-      # --- Kilo specific start
-
-      scaleio_filter_file { 'cinder filter file':
-        ensure  => $ensure,
-        service => 'cinder'
-      } ->
-
-      file { "Ensure directory has access: /bin/emc/scaleio":
-        ensure  => directory,
-        path    => '/bin/emc/scaleio',
-        recurse => true,
-        mode  => '0755',
-      } ->
-      # --- Kilo specific start
       ini_setting { 'change_volume_manager':
         ensure  => $ensure,
         path    => '/etc/cinder/cinder.conf',
@@ -169,39 +107,65 @@ class scaleio_openstack::cinder (
         setting => 'volume_manager',
         value   => 'cinder.volume.managers.emc.manager.EMCVolumeManager',
       } ->
-      # --- Kilo specific end
-      ini_setting { 'enabled_backends':
-        path    => '/etc/cinder/cinder.conf',
-        section => 'DEFAULT',
-        setting => 'enabled_backends',
-        value   => $enabled_backends,
-      } ->
-      ini_setting { 'volume_driver':
-        path    => '/etc/cinder/cinder.conf',
-        section => 'ScaleIO',
-        setting => 'volume_driver',
-        value   => 'cinder.volume.drivers.emc.scaleio.ScaleIODriver',
-      } ->
-      ini_setting { 'cinder_scaleio_config_file':
-        path    => '/etc/cinder/cinder.conf',
-        section => 'ScaleIO',
-        setting => 'cinder_scaleio_config_file',
-        value   => $scaleio_cinder_config_file,
-      } ->
-      ini_setting { 'volume_backend_name':
-        path    => '/etc/cinder/cinder.conf',
-        section => 'ScaleIO',
-        setting => 'volume_backend_name',
-        value   => 'ScaleIO',
-      } ~>
 
+      patch_common { 'patch kilo cinder': } ~>
+      service { $services_to_notify:
+        ensure => running,
+      }
+    }
+    elsif $version_array[0] == '7' or $version_array[0] == '8' {
+      notify { "Detected cinder version $version - treat as Liberty": }
+      
+      patch_common { 'patch juno cinder conf': } ~>
       service { $services_to_notify:
         ensure => running,
       }
     }
     else {
-      fail("Version $version too high and isn't supported.")
+      fail("Version ${version} isn't supported.")
     }
+  }
+
+  define patch_common {
+    file { $scaleio_openstack::cinder::scaleio_cinder_config_file:
+      ensure  =>  $scaleio_openstack::cinder::ensure,
+      content => template('scaleio_openstack/cinder_scaleio.conf.erb'),
+    } ->
+    scaleio_filter_file { 'cinder filter file':
+      ensure  => $scaleio_openstack::cinder::ensure,
+      service => 'cinder'
+    } ->
+
+    file { "Ensure directory has access: /bin/emc/scaleio":
+      ensure  => directory,
+      path    => '/bin/emc/scaleio',
+      recurse => true,
+      mode  => '0755',
+    } ->
+    ini_setting { 'enabled_backends':
+      path    => '/etc/cinder/cinder.conf',
+      section => 'DEFAULT',
+      setting => 'enabled_backends',
+      value   => $scaleio_openstack::cinder::enabled_backends,
+    } ->
+    ini_setting { 'volume_driver':
+      path    => '/etc/cinder/cinder.conf',
+      section => 'ScaleIO',
+      setting => 'volume_driver',
+      value   => 'cinder.volume.drivers.emc.scaleio.ScaleIODriver',
+    } ->
+    ini_setting { 'cinder_scaleio_config_file':
+      path    => '/etc/cinder/cinder.conf',
+      section => 'ScaleIO',
+      setting => 'cinder_scaleio_config_file',
+      value   => $scaleio_openstack::cinder::scaleio_cinder_config_file,
+    } ->
+    ini_setting { 'volume_backend_name':
+      path    => '/etc/cinder/cinder.conf',
+      section => 'ScaleIO',
+      setting => 'volume_backend_name',
+      value   => 'ScaleIO',
+    }    
   }
 } # class scaleio::cinder
 

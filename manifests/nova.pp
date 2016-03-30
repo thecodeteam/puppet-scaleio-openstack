@@ -17,13 +17,10 @@ class scaleio_openstack::nova(
 
     $version_str = split($::nova_version, '-')
     $version = $version_str[0]
-    if versioncmp($version, '2014.2.0') < 0 {
-      fail("Version $version too small and isn't supported.")
-    }
-    elsif versioncmp($version, '2015.1.0') < 0 {
-      notify { "Detected nova version $version - treat as Juno":; }
-
-      nova_common { 'nova common for Juno':
+    if $version in ['12.0.1', '12.0.2'] {
+      notify { "Detected nova version ${version} - treat as Liberty": }
+     
+      nova_common { 'nova common for Liberty':
         ensure => $ensure,
         gateway_user => $gateway_user,
         gateway_password => $gateway_password,
@@ -31,33 +28,16 @@ class scaleio_openstack::nova(
         gateway_port => $gateway_port,
         protection_domains => $protection_domains,
         storage_pools => $storage_pools,
-        openstack_version => 'juno',
-        siolib_file => 'siolib-1.2.5.tar.gz',
+        openstack_version => 'liberty',
+        siolib_file => 'siolib-1.3.5.tar.gz',
         nova_patch => "${version}.diff",
-      } ->
-
-      file_from_source { 'scaleio driver for nova':
-        ensure    => $ensure,
-        dir       => "${::nova_path}/virt/libvirt",
-        file_name => 'scaleiolibvirtdriver.py',
-        src_dir   => 'juno/nova'
-      } ->
-      ini_subsetting { 'scaleio_nova_config':
-        ensure               => $ensure,
-        path                 => '/etc/nova/nova.conf',
-        section              => 'libvirt',
-        setting              => 'volume_drivers',
-        subsetting           => 'scaleio=nova.virt.libvirt.scaleiolibvirtdriver.LibvirtScaleIOVolumeDriver',
-        subsetting_separator => ',',
       } ~>
-
       service { 'nova-compute':
         ensure => running,
       }
-
     }
-    elsif versioncmp($version, '2015.2.0') < 0 {
-      notify { "Detected nova version $version - treat as Kilo":; }
+    elsif $version in ['2015.1.1', '2015.1.2', '2015.1.3']  {
+      notify { "Detected nova version ${version} - treat as Kilo": }
 
       nova_common { 'nova common for Kilo':
         ensure => $ensure,
@@ -113,9 +93,47 @@ class scaleio_openstack::nova(
       }
 
     }
+    elsif $version in ['2014.2.2', '2012.2.4'] {
+      notify { "Detected nova version ${version} - treat as Juno": }
+
+      nova_common { 'nova common for Juno':
+        ensure => $ensure,
+        gateway_user => $gateway_user,
+        gateway_password => $gateway_password,
+        gateway_ip => $gateway_ip,
+        gateway_port => $gateway_port,
+        protection_domains => $protection_domains,
+        storage_pools => $storage_pools,
+        openstack_version => 'juno',
+        siolib_file => 'siolib-1.2.5.tar.gz',
+        nova_patch => "${version}.diff",
+      } ->
+
+      file_from_source { 'scaleio driver for nova':
+        ensure    => $ensure,
+        dir       => "${::nova_path}/virt/libvirt",
+        file_name => 'scaleiolibvirtdriver.py',
+        src_dir   => 'juno/nova'
+      } ->
+      ini_subsetting { 'scaleio_nova_config':
+        ensure               => $ensure,
+        path                 => '/etc/nova/nova.conf',
+        section              => 'libvirt',
+        setting              => 'volume_drivers',
+        subsetting           => 'scaleio=nova.virt.libvirt.scaleiolibvirtdriver.LibvirtScaleIOVolumeDriver',
+        subsetting_separator => ',',
+      } ~>
+
+      service { 'nova-compute':
+        ensure => running,
+      }
+
+    }
     else {
-      fail("Version $version too high and isn't supported.")
+      fail("Version ${version} isn't supported.")
     }
   }
+  
+  # TODO: Disintigrate to separate files for each version
 }
 
