@@ -30,7 +30,7 @@ class scaleio_openstack::nova(
         protection_domains => $protection_domains,
         storage_pools => $storage_pools,
         openstack_version => 'liberty',
-        siolib_file => 'siolib-1.3.5.tar.gz',
+        siolib_file => 'siolib-1.4.5.tar.gz',
         nova_patch => "${version}.diff",
       } ~>
       service { 'nova-compute':
