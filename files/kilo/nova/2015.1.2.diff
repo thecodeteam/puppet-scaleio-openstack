@@ -558,7 +558,7 @@ index e69de29..1b3e433 100644
 +    """
 +    disk_name = re.sub(_standard_disk_prefix, '', disk_name)
 +    if disk_name:
-+        return 'i-%08x_' % (instance.id, disk_name.replace('.', '-'))
++        return 'i-%08x_%s' % (instance.id, disk_name.replace('.', '-'))
 +    else:
 +        return 'i-%08x' % instance.id
 +
