@@ -491,7 +491,7 @@ diff --git a/nova/virt/libvirt/sio_utils.py b/nova/virt/libvirt/sio_utils.py
 index e69de29..1017791 100644
 --- a/nova/virt/libvirt/sio_utils.py
 +++ b/nova/virt/libvirt/sio_utils.py
-@@ -0,0 +1,409 @@
+@@ -0,0 +1,412 @@
 +# Copyright (c) 2015 EMC Corporation
 +# All Rights Reserved
 +#
@@ -504,6 +504,7 @@ index e69de29..1017791 100644
 +
 +import re
 +
++from oslo_config import cfg
 +from oslo_concurrency import processutils
 +from oslo_log import log as logging
 +from oslo_utils import units
@@ -520,8 +521,9 @@ index e69de29..1017791 100644
 +
 +LOG = logging.getLogger(__name__)
 +
++CONF = None
 +if siolib:
-+    CONF = siolib.ConfigOpts()
++    CONF = cfg.CONF
 +    CONF.register_group(siolib.SIOGROUP)
 +    CONF.register_opts(siolib.SIOOPTS, siolib.SIOGROUP)
 +
@@ -600,7 +602,8 @@ index e69de29..1017791 100644
 +
 +        # IOCTL reference to ScaleIO API python library
 +        self.ioctx = scaleio.ScaleIO(pd_name=self.pd_name,
-+                                     sp_name=self.sp_name)
++                                     sp_name=self.sp_name,
++                                     conf=CONF)
 +
 +    def create(self, name, size):
 +        """Create a ScaleIO volume
