@@ -106,6 +106,6 @@ define scaleio_openstack::nova_common(
 
   Ini_setting {
     ensure  => $ensure,
-    path    => '/etc/nova/nova-compute.conf',
+    path    => '/etc/nova/nova.conf',
   }
 }

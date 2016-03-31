@@ -6,6 +6,7 @@ class scaleio_openstack::nova(
   $gateway_port        = 4443,
   $protection_domains  = undef,
   $storage_pools       = undef,
+  $nova_compute_conf_file_name = 'nova.conf',
 )
 {
   notify {'Configuring Compute node for ScaleIO integration': }
@@ -82,7 +83,7 @@ class scaleio_openstack::nova(
       } ->
       ini_setting { 'scaleio_nova_compute_config compute_driver':
         ensure  => $ensure,
-        path    => '/etc/nova/nova-compute.conf',
+        path    => "/etc/nova/${nova_compute_conf_file_name}",
         section => 'DEFAULT',
         setting => 'compute_driver',
         value   => 'nova.virt.libvirt.drivers.emc.driver.EMCLibvirtDriver',
@@ -133,7 +134,7 @@ class scaleio_openstack::nova(
       fail("Version ${version} isn't supported.")
     }
   }
-  
+
   # TODO: Disintigrate to separate files for each version
 }
 
