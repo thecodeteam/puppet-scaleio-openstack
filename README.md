@@ -3,7 +3,7 @@
 ## Overview
 
 A Puppet module that updates OpenStack to work with ScaleIO 2.0 block storage.
-Provides supports for volumes and ephemeral storages including live migration and resize.
+Provides supports for volumes and nova ephemeral storages including live migration and resize.
 
 ## Setup
 
@@ -34,11 +34,17 @@ Requires nova-compute and/or cinder installed on the node along with ScaleIO SDC
 
 ## Structure and specifics
 
-There are 4 manifests:
+There are 2 manifests to use:
   * cinder.pp - installs scaleio cinder driver, updates cinder services configurations and notifies services
   * nova.pp   - installs scale nova driver and notify nova service
-  * volume_type.pp - create volume type for provided domains and storage pools
-  * qos.pp - create QoS rules for volumes
+
+Common code:
+  * nova_common.pp - common patching and configuration of nova for all versions of OpenStack
+  * init.pp - utility functions
+
+Files:
+  * juno, kilo and liberty
+  * for cinder and nova
 
 ## Usage example
   ```
