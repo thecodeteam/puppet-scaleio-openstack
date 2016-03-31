@@ -28,17 +28,23 @@ class scaleio_openstack::cinder (
     $domains = split($protection_domains,',')
     $pools = split($storage_pools,',')
     $pools_list = regsubst(join(flatten(zip($domains, $pools)), ':'), '(\w+):(\w+):', '\1:\2,', 'G')
-    $enabled_backends = $ensure ? { absent  => $default_lvm_backend, default => 'ScaleIO'}
+    $enabled_backends = $ensure ? { absent  => $default_lvm_backend, default => 'scaleio' }
     $default_protection_domain = $domains[0]
     $default_storage_pool = $pools[0]
 
     $version_str = split($::cinder_version, '-')
     $version = $version_str[0]
     $version_array = split($version, '\.')
-    
+
     if $version_array[0] == '2014' and $version_array[1] == '2' {
       notify { "Detected cinder version $version - treat as Juno": }
 
+      file { "Ensure directory has access: /bin/emc/scaleio":
+        ensure  => directory,
+        path    => '/bin/emc/scaleio',
+        recurse => true,
+        mode  => '0755',
+      } ->
       file_from_source {'scaleio driver for cinder':
         ensure    => $ensure,
         dir       => "${::cinder_path}/volume/drivers/emc",
@@ -54,6 +60,12 @@ class scaleio_openstack::cinder (
     elsif $version_array[0] == '2015' and $version_array[1] == '1' {
       notify { "Detected cinder version $version - treat as Kilo": }
 
+      file { "Ensure directory has access: /bin/emc/scaleio":
+        ensure  => directory,
+        path    => '/bin/emc/scaleio',
+        recurse => true,
+        mode  => '0755',
+      } ->
       file { "Ensure managers directory present: ":
         ensure  => directory,
         path    => "${::cinder_path}/volume/managers",
@@ -115,8 +127,105 @@ class scaleio_openstack::cinder (
     }
     elsif $version_array[0] == '7' or $version_array[0] == '8' {
       notify { "Detected cinder version $version - treat as Liberty": }
-      
-      patch_common { 'patch juno cinder conf': } ~>
+
+      file { "Ensure directory has access: /bin/emc/scaleio":
+        ensure  => directory,
+        path    => '/bin/emc/scaleio',
+        recurse => true,
+        mode  => '0755',
+      } ->
+      ini_setting { 'enabled_backends':
+        path    => '/etc/cinder/cinder.conf',
+        section => 'DEFAULT',
+        setting => 'enabled_backends',
+        value   => $scaleio_openstack::cinder::enabled_backends,
+      } ->
+      ini_setting { 'default_volume_type':
+        ensure  => $ensure,
+        path    => '/etc/cinder/cinder.conf',
+        section => 'DEFAULT',
+        setting => 'default_volume_type',
+        value   => 'scaleio,
+      } ->
+      ini_setting { 'scaleio volume_driver':
+        path    => '/etc/cinder/cinder.conf',
+        section => 'scaleio',
+        setting => 'volume_driver',
+        value   => 'cinder.volume.drivers.emc.scaleio.ScaleIODriver',
+      } ->
+      ini_setting { 'scaleio volume_backend_name':
+        path    => '/etc/cinder/cinder.conf',
+        section => 'scaleio',
+        setting => 'volume_backend_name',
+        value   => 'scaleio',
+      } ->
+      ini_setting { 'scaleio sio_round_volume_capacity':
+        path    => '/etc/cinder/cinder.conf',
+        section => 'scaleio',
+        setting => 'sio_round_volume_capacity',
+        value   => $round_volume_capacity,
+      } ->
+      ini_setting { 'scaleio sio_verify_server_certificate':
+        path    => '/etc/cinder/cinder.conf',
+        section => 'scaleio',
+        setting => 'sio_verify_server_certificate',
+        value   => $verify_server_certificate,
+      } ->
+      ini_setting { 'scaleio sio_force_delete':
+        path    => '/etc/cinder/cinder.conf',
+        section => 'scaleio',
+        setting => 'sio_force_delete',
+        value   => $force_delete,
+      } ->
+      ini_setting { 'scaleio sio_unmap_volume_before_deletion':
+        path    => '/etc/cinder/cinder.conf',
+        section => 'scaleio',
+        setting => 'sio_unmap_volume_before_deletion',
+        value   => 'True',
+      } ->
+      ini_setting { 'scaleio san_ip':
+        path    => '/etc/cinder/cinder.conf',
+        section => 'scaleio',
+        setting => 'san_ip',
+        value   => $gateway_ip,
+      } ->
+      ini_setting { 'scaleio sio_rest_server_port':
+        path    => '/etc/cinder/cinder.conf',
+        section => 'scaleio',
+        setting => 'sio_rest_server_port',
+        value   => $gateway_port,
+      } ->
+      ini_setting { 'scaleio san_login':
+        path    => '/etc/cinder/cinder.conf',
+        section => 'scaleio',
+        setting => 'san_login',
+        value   => $gateway_user,
+      } ->
+      ini_setting { 'scaleio san_password':
+        path    => '/etc/cinder/cinder.conf',
+        section => 'scaleio',
+        setting => 'san_password',
+        value   => $gateway_password,
+      } ->
+      ini_setting { 'scaleio sio_protection_domain_name':
+        path    => '/etc/cinder/cinder.conf',
+        section => 'scaleio',
+        setting => 'sio_protection_domain_name',
+        value   => $default_protection_domain,
+      } ->
+      ini_setting { 'scaleio sio_storage_pools':
+        path    => '/etc/cinder/cinder.conf',
+        section => 'scaleio',
+        setting => 'sio_storage_pools',
+        value   => $pools_list,
+      } ->
+      ini_setting { 'scaleio sio_storage_pool_name':
+        path    => '/etc/cinder/cinder.conf',
+        section => 'scaleio',
+        setting => 'sio_storage_pool_name',
+        value   => $default_storage_pool,
+      } ~>
+
       service { $services_to_notify:
         ensure => running,
       }
@@ -136,12 +245,6 @@ class scaleio_openstack::cinder (
       service => 'cinder'
     } ->
 
-    file { "Ensure directory has access: /bin/emc/scaleio":
-      ensure  => directory,
-      path    => '/bin/emc/scaleio',
-      recurse => true,
-      mode  => '0755',
-    } ->
     ini_setting { 'enabled_backends':
       path    => '/etc/cinder/cinder.conf',
       section => 'DEFAULT',
@@ -165,7 +268,7 @@ class scaleio_openstack::cinder (
       section => 'ScaleIO',
       setting => 'volume_backend_name',
       value   => 'ScaleIO',
-    }    
+    }
   }
 } # class scaleio::cinder
 
