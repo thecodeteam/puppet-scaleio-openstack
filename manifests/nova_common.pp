@@ -16,11 +16,16 @@ define scaleio_openstack::nova_common(
   package { ['python-pip']:
     ensure => present,
   } ->
-  package { 'siolib':
-    ensure => $ensure,
-    provider => 'pip',
-    source => "file:///tmp/${siolib_file}"
-  } ->
+# Commented because it didn't work in Liberty deployment
+#  package { 'siolib':
+#    ensure => $ensure,
+#    provider => 'pip',
+#    source => "file:///tmp/${siolib_file}"
+#  } ->
+  exec {'siolib':
+    command => "pip install /tmp/${siolib_file}",
+    path => '/bin:/user/bin'
+  }->
 
   scaleio_filter_file { 'nova filter file':
     ensure  => $ensure,

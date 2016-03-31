@@ -1,14 +1,3 @@
-diff --git a/etc/nova/rootwrap.d/compute.filters b/etc/nova/rootwrap.d/compute.filters
-index 2a38cca..60c100a 100644
---- a/etc/nova/rootwrap.d/compute.filters
-+++ b/etc/nova/rootwrap.d/compute.filters
-@@ -244,3 +244,6 @@ ploop: CommandFilter, ploop, root
- 
- # nova/virt/libvirt/utils.py: 'xend', 'status'
- xend: CommandFilter, xend, root
-+
-+# nova/virt/libvirt/sio_utils.py: 'partprobe', device_path
-+partprobe: CommandFilter, partprobe, root
 diff --git a/nova/virt/image/model.py b/nova/virt/image/model.py
 index 4e8f46e..ab44386 100644
 --- a/nova/virt/image/model.py
