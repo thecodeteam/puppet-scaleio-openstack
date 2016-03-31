@@ -145,7 +145,7 @@ class scaleio_openstack::cinder (
         path    => '/etc/cinder/cinder.conf',
         section => 'DEFAULT',
         setting => 'default_volume_type',
-        value   => 'scaleio,
+        value   => 'scaleio',
       } ->
       ini_setting { 'scaleio volume_driver':
         path    => '/etc/cinder/cinder.conf',
