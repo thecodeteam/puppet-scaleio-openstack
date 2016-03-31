@@ -104,8 +104,6 @@ class ScaleIOConnector(InitiatorConnector):
         self.bandwidth_limit = None
         # epc-1094 check if running in container
         self.is_container = self._in_container()
-        # epc-1094 located client binary in container
-        self.sdc_cmd = self._find_sdc_binary()
 
     def get_search_path(self):
         """
@@ -156,41 +154,6 @@ class ScaleIOConnector(InitiatorConnector):
                 containerized = True
 
         return containerized
-
-    def _find_sdc_binary(self):
-        """
-        Locate the ScaleIO client executable. This executable is run by the following
-        methods connect_volume() and disconnect_volume()
-
-        :return: Path to the SDC binary
-        """
-
-        from distutils.spawn import find_executable
-        from os import environ
-        sdc_exec = None
-        sdc_path = None
-
-        for bin_path in SDC_BIN_PATHS:
-            sdc_exec = find_executable('drv_cfg', path=bin_path)
-            if sdc_exec:
-                sdc_path = bin_path
-                break # executable sdc found we can leave loop
-
-        # if looped through all paths in SDC_BIN_PATH and sdc not found raise error
-        if not sdc_exec:
-            msg = "Error locating ScaleIO Data Client (SDC). Is the SDC installed?"
-            LOG.error(msg)
-            raise exception.CinderException(data=msg)
-        else:
-            cur_path = environ.get('PATH', []).split(':')
-            cur_path.append(sdc_path)
-            environ['PATH'] = ':'.join(cur_path)
-            LOG.info("ScaleIO updated path to SDC binary. Path updated {0}".format(environ['PATH']))
-
-        LOG.info("Located ScaleIO Data Client (SDC) at {0}".format(sdc_exec))
-        self.GET_GUID_CMD.pop(0)
-        self.GET_GUID_CMD.insert(0, sdc_exec)
-        return sdc_exec
 
     def _find_volume_path(self):
         """

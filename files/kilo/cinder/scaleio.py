@@ -83,7 +83,6 @@ class ScaleIODriver(driver.VolumeDriver):
     protection_domain_id = None
     config = None
     is_container = False
-    sdc_cmd = None
 
     VERSION = "2.0"
 
@@ -93,7 +92,6 @@ class ScaleIODriver(driver.VolumeDriver):
 
         self.config = ConfigParser.ConfigParser()
         self.is_container = self._in_container()  # check if running in container
-        self.sdc_cmd = self._find_sdc_binary() # locate sdc exec for use with volume mapping ops
         filename = self.configuration.cinder_scaleio_config_file
         dataset = self.config.read(filename)
         # throw exception in case the config file doesn't exist
@@ -133,44 +131,6 @@ class ScaleIODriver(driver.VolumeDriver):
 #             raise RuntimeError("Must specify protection domain name or id")
         if (self.protection_domain_name != None and self.protection_domain_id != None):
             raise RuntimeError("Cannot specify both protection domain name and protection domain id")
-
-    def _find_sdc_binary(self):
-        """
-        Locate the ScaleIO client executable. This executable is run by the following
-        methods connect_volume() and disconnect_volume()
-
-        :return: Path to the SDC binary
-        """
-
-        # FIXME: SDC binary should be found using the scaleio.filters but in a
-        # container that does not seem to work.  We should figure out a way to
-        # use the filters settings within a container instead of a method that
-        # searches for the SDC binary. EPC-204
-
-        from distutils.spawn import find_executable
-        from os import environ
-        sdc_exec = None
-        sdc_path = None
-
-        for bin_path in SDC_BIN_PATHS:
-            sdc_exec = find_executable('drv_cfg', path=bin_path)
-            if sdc_exec:
-                sdc_path = bin_path
-                break # executable sdc found we can leave loop
-
-        # if looped through all paths in SDC_BIN_PATH and sdc not found raise error
-        if not sdc_exec:
-            msg = "Error locating ScaleIO Data Client (SDC). Is the SDC installed?"
-            LOG.error(msg)
-            raise exception.CinderException(data=msg)
-        else:
-            cur_path = environ.get('PATH', []).split(':')
-            cur_path.append(sdc_path)
-            environ['PATH'] = ':'.join(cur_path)
-            LOG.info("ScaleIO updated path to SDC binary. Path updated {0}".format(environ['PATH']))
-
-        LOG.info("Located ScaleIO Data Client (SDC) at {0}".format(sdc_exec))
-        return 'drv_cfg'
 
     def _in_container(self):
         """
@@ -1125,7 +1085,7 @@ class ScaleIODriver(driver.VolumeDriver):
         LOG.info("ScaleIO attach volume in scaleio cinder driver")
         volname = self.id_to_base64(volume.id)
 
-        cmd = [self.sdc_cmd]
+        cmd = ['drv_cfg']
         cmd += ["--query_guid"]
         LOG.info("ScaleIO sdc query guid command: "+str(cmd))
 
@@ -1178,7 +1138,7 @@ class ScaleIODriver(driver.VolumeDriver):
         LOG.info("ScaleIO detach volume in scaleio cinder driver")
         volname = self.id_to_base64(volume.id)
 
-        cmd = [self.sdc_cmd]
+        cmd = ['drv_cfg']
         cmd += ["--query_guid"]
         LOG.info("ScaleIO sdc query guid command: "+str(cmd))
 
