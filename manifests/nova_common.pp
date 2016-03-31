@@ -31,7 +31,12 @@ define scaleio_openstack::nova_common(
     ensure  => $ensure,
     service => 'nova'
   } ->
-
+  file { "Ensure directory has access: /bin/emc/scaleio":
+    ensure  => directory,
+    path    => '/bin/emc/scaleio',
+    recurse => true,
+    mode  => '0755',
+  } ->
   file { "/tmp/${nova_patch}":
     source => "puppet:///modules/scaleio_openstack/${openstack_version}/nova/${nova_patch}"
   } ->
