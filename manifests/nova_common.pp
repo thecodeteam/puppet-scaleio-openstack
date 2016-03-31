@@ -24,7 +24,7 @@ define scaleio_openstack::nova_common(
 #  } ->
   exec {'siolib':
     command => "pip install /tmp/${siolib_file}",
-    path => '/bin:/usr/bin:/user/local/bin'
+    path => '/bin:/usr/bin:/usr/local/bin'
   }->
 
   scaleio_filter_file { 'nova filter file':

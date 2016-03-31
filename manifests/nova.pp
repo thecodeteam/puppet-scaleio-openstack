@@ -19,7 +19,7 @@ class scaleio_openstack::nova(
     $version = $version_str[0]
     if $version in ['12.0.1', '12.0.2'] {
       notify { "Detected nova version ${version} - treat as Liberty": }
-     
+
       nova_common { 'nova common for Liberty':
         ensure => $ensure,
         gateway_user => $gateway_user,
