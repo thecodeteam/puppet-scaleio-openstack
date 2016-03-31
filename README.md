@@ -5,6 +5,9 @@
 A Puppet module that updates OpenStack to work with ScaleIO 2.0 block storage.
 Provides supports for volumes and nova ephemeral storages including live migration and resize.
 
+Important: ScaleIO supports only 8gb increases for storage allocation so special flavors for storage in multiples of 8
+should be created in OpenStack.
+
 ## Setup
 
 ### What Puppet-ScaleIO affects
