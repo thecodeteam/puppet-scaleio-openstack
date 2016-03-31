@@ -94,7 +94,7 @@ class scaleio_openstack::nova(
       }
 
     }
-    elsif $version in ['2014.2.2', '2012.2.4'] {
+    elsif $version in ['2014.2.2', '2014.2.4'] {
       notify { "Detected nova version ${version} - treat as Juno": }
 
       nova_common { 'nova common for Juno':
