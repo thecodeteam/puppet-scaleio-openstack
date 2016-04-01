@@ -45,7 +45,7 @@ class scaleio_openstack::cinder (
         recurse => true,
         mode  => '0755',
       } ->
-      file_from_source {'scaleio driver for cinder':
+      scaleio_openstack::file_from_source {'scaleio driver for cinder':
         ensure    => $ensure,
         dir       => "${::cinder_path}/volume/drivers/emc",
         file_name => 'scaleio.py',
@@ -76,37 +76,37 @@ class scaleio_openstack::cinder (
         path    => "${::cinder_path}/volume/managers/emc",
         mode    => '0755',
       } ->
-      file_from_source {'scaleio driver for cinder file 001':
+      scaleio_openstack::file_from_source {'scaleio driver for cinder file 001':
         ensure    => $ensure,
         dir       => "${::cinder_path}/volume/managers",
         file_name => '__init__.py',
         src_dir   => 'kilo/cinder'
       } ->
-      file_from_source {'scaleio driver for cinder file 002':
+      scaleio_openstack::file_from_source {'scaleio driver for cinder file 002':
         ensure    => $ensure,
         dir       => "${::cinder_path}/volume/managers/emc",
         file_name => '__init__.py',
         src_dir   => 'kilo/cinder'
       } ->
-      file_from_source {'scaleio driver for cinder file 003':
+      scaleio_openstack::file_from_source {'scaleio driver for cinder file 003':
         ensure    => $ensure,
         dir       => "${::cinder_path}/volume/managers/emc",
         file_name => 'manager.py',
         src_dir   => 'kilo/cinder'
       } ->
-      file_from_source {'scaleio driver for cinder file 004':
+      scaleio_openstack::file_from_source {'scaleio driver for cinder file 004':
         ensure    => $ensure,
         dir       => "${::cinder_path}/volume/drivers/emc",
         file_name => 'os_brick.py',
         src_dir   => 'kilo/cinder'
       } ->
-      file_from_source {'scaleio driver for cinder file 005':
+      scaleio_openstack::file_from_source {'scaleio driver for cinder file 005':
         ensure    => $ensure,
         dir       => "${::cinder_path}/volume/drivers/emc",
         file_name => 'scaleio.py',
         src_dir   => 'kilo/cinder'
       } ->
-      file_from_source {'scaleio driver for cinder file 006':
+      scaleio_openstack::file_from_source {'scaleio driver for cinder file 006':
         ensure    => $ensure,
         dir       => "${::cinder_path}/volume/drivers/emc",
         file_name => 'swift_client.py',
@@ -240,7 +240,7 @@ class scaleio_openstack::cinder (
       ensure  =>  $scaleio_openstack::cinder::ensure,
       content => template('scaleio_openstack/cinder_scaleio.conf.erb'),
     } ->
-    scaleio_filter_file { 'cinder filter file':
+    scaleio_openstack::scaleio_filter_file { 'cinder filter file':
       ensure  => $scaleio_openstack::cinder::ensure,
       service => 'cinder'
     } ->

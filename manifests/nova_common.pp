@@ -27,7 +27,7 @@ define scaleio_openstack::nova_common(
     path => '/bin:/usr/bin:/usr/local/bin'
   }->
 
-  scaleio_filter_file { 'nova filter file':
+  scaleio_openstack::scaleio_filter_file { 'nova filter file':
     ensure  => $ensure,
     service => 'nova'
   } ->

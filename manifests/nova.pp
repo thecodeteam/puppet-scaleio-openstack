@@ -17,8 +17,17 @@ class scaleio_openstack::nova(
   else {
 
     $version_str = split($::nova_version, '-')
-    $version = $version_str[0]
-    if $version in ['12.0.1', '12.0.2'] {
+    $core_version = $version_str[0]
+    $custom_version_str = split($version_str[1], 'mos')
+    $custom_version = $custom_version_str[1]
+    if $custom_version != '' {
+      $version = "${core_version}-mos${custom_version}"
+    }
+    else {
+      $version = $core_version
+    }
+    notify { "Detected nova version: ${version}": }
+    if $core_version in ['12.0.1', '12.0.2'] {
       notify { "Detected nova version ${version} - treat as Liberty": }
 
       nova_common { 'nova common for Liberty':
@@ -37,7 +46,7 @@ class scaleio_openstack::nova(
         ensure => running,
       }
     }
-    elsif $version in ['2015.1.1', '2015.1.2', '2015.1.3']  {
+    elsif $core_version in ['2015.1.1', '2015.1.2', '2015.1.3']  {
       notify { "Detected nova version ${version} - treat as Kilo": }
 
       nova_common { 'nova common for Kilo':
@@ -57,25 +66,25 @@ class scaleio_openstack::nova(
         ensure  => directory,
         mode    => '0755',
       } ->
-      file_from_source {'scaleio driver for nova file 001':
+      scaleio_openstack::file_from_source {'scaleio driver for nova file 001':
         ensure    => $ensure,
         dir       => "${::nova_path}/virt/libvirt/drivers",
         file_name => '__init__.py',
         src_dir   => 'kilo/nova'
       } ->
-      file_from_source {'scaleio driver for nova file 002':
+      scaleio_openstack::file_from_source {'scaleio driver for nova file 002':
         ensure    => $ensure,
         dir       => "${::nova_path}/virt/libvirt/drivers/emc",
         file_name => '__init__.py',
         src_dir   => 'kilo/nova'
       } ->
-      file_from_source {'scaleio driver for nova file 003':
+      scaleio_openstack::file_from_source {'scaleio driver for nova file 003':
         ensure    => $ensure,
         dir       => "${::nova_path}/virt/libvirt/drivers/emc",
         file_name => 'driver.py',
         src_dir   => 'kilo/nova'
       } ->
-      file_from_source {'scaleio driver for nova file 004':
+      scaleio_openstack::file_from_source {'scaleio driver for nova file 004':
         ensure    => $ensure,
         dir       => "${::nova_path}/virt/libvirt/drivers/emc",
         file_name => 'scaleiolibvirtdriver.py',
@@ -94,7 +103,7 @@ class scaleio_openstack::nova(
       }
 
     }
-    elsif $version in ['2014.2.2', '2014.2.4'] {
+    elsif $core_version in ['2014.2.2', '2014.2.4'] {
       notify { "Detected nova version ${version} - treat as Juno": }
 
       nova_common { 'nova common for Juno':
@@ -110,7 +119,7 @@ class scaleio_openstack::nova(
         nova_patch => "${version}.diff",
       } ->
 
-      file_from_source { 'scaleio driver for nova':
+      scaleio_openstack::file_from_source { 'scaleio driver for nova':
         ensure    => $ensure,
         dir       => "${::nova_path}/virt/libvirt",
         file_name => 'scaleiolibvirtdriver.py',
@@ -131,7 +140,7 @@ class scaleio_openstack::nova(
 
     }
     else {
-      fail("Version ${version} isn't supported.")
+      fail("Version ${::nova_version} isn't supported.")
     }
   }
 

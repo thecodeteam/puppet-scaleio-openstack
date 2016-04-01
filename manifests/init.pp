@@ -28,7 +28,7 @@ class scaleio_openstack
     file { ["/usr/share", "/usr/share/${service}", "/usr/share/${service}/rootwrap"]:
       ensure  => directory,
     } ->
-    file_from_source { $file_path:
+    scaleio_openstack::file_from_source { $file_path:
       ensure    => $ensure,
       dir       => $dir,
       file_name => $file_name,
