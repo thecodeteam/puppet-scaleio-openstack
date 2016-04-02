@@ -1,16 +1,16 @@
 diff --git a/nova/virt/libvirt/driver.py b/nova/virt/libvirt/driver.py
-index cec2013..da071eb 100644
+index beb5332..e79e73c 100644
 --- a/nova/virt/libvirt/driver.py
 +++ b/nova/virt/libvirt/driver.py
-@@ -103,6 +103,7 @@ from nova.virt.libvirt import imagebackend
- from nova.virt.libvirt import imagecache
+@@ -103,6 +103,7 @@ from nova.virt.libvirt import imagecache
+ from nova.virt.libvirt import instancejobtracker
  from nova.virt.libvirt import lvm
  from nova.virt.libvirt import rbd_utils
 +from nova.virt.libvirt import sio_utils
  from nova.virt.libvirt import utils as libvirt_utils
  from nova.virt.libvirt import vif as libvirt_vif
  from nova.virt import netutils
-@@ -1170,6 +1171,8 @@ class LibvirtDriver(driver.ComputeDriver):
+@@ -1211,6 +1212,8 @@ class LibvirtDriver(driver.ComputeDriver):
                  self._cleanup_lvm(instance)
              if CONF.libvirt.images_type == 'rbd':
                  self._cleanup_rbd(instance)
@@ -19,24 +19,7 @@ index cec2013..da071eb 100644
  
          if destroy_disks or (
                  migrate_data and migrate_data.get('is_shared_block_storage',
-@@ -1184,8 +1187,14 @@ class LibvirtDriver(driver.ComputeDriver):
- 
-     def _detach_encrypted_volumes(self, instance):
-         """Detaches encrypted volumes attached to instance."""
--        disks = jsonutils.loads(self.get_instance_disk_info(instance['name']))
--        encrypted_volumes = filter(dmcrypt.is_encrypted,
-+        pattern = '%s_' % instance['uuid']
-+
-+        def belongs_to_instance(path):
-+            return (dmcrypt.is_encrypted(path) and
-+                    path.rpartition('/')[2].startswith(pattern))
-+
-+        disks = dmcrypt.list_volumes()
-+        encrypted_volumes = filter(belongs_to_instance,
-                                    [disk['path'] for disk in disks])
-         for path in encrypted_volumes:
-             dmcrypt.delete_volume(path)
-@@ -1213,6 +1222,15 @@ class LibvirtDriver(driver.ComputeDriver):
+@@ -1254,6 +1257,15 @@ class LibvirtDriver(driver.ComputeDriver):
                  ceph_conf=CONF.libvirt.images_rbd_ceph_conf,
                  rbd_user=CONF.libvirt.rbd_user)
  
@@ -52,7 +35,7 @@ index cec2013..da071eb 100644
      def _cleanup_rbd(self, instance):
          LibvirtDriver._get_rbd_driver().cleanup_volumes(instance)
  
-@@ -1265,6 +1283,10 @@ class LibvirtDriver(driver.ComputeDriver):
+@@ -1306,6 +1318,10 @@ class LibvirtDriver(driver.ComputeDriver):
              return disks
          return []
  
@@ -63,7 +46,7 @@ index cec2013..da071eb 100644
      def get_volume_connector(self, instance):
          if not self._initiator:
              self._initiator = libvirt_utils.get_iscsi_initiator()
-@@ -1315,10 +1337,22 @@ class LibvirtDriver(driver.ComputeDriver):
+@@ -1356,10 +1372,22 @@ class LibvirtDriver(driver.ComputeDriver):
              utils.execute('rm', '-rf', target, delay_on_retry=True,
                            attempts=5)
  
@@ -86,7 +69,7 @@ index cec2013..da071eb 100644
  
      def _connect_volume(self, connection_info, disk_info):
          driver_type = connection_info.get('driver_volume_type')
-@@ -1646,7 +1680,7 @@ class LibvirtDriver(driver.ComputeDriver):
+@@ -1687,7 +1715,7 @@ class LibvirtDriver(driver.ComputeDriver):
          image_format = CONF.libvirt.snapshot_image_format or source_format
  
          # NOTE(bfilippov): save lvm and rbd as raw
@@ -95,7 +78,7 @@ index cec2013..da071eb 100644
              image_format = 'raw'
  
          metadata = self._create_snapshot_metadata(base,
-@@ -1669,7 +1703,7 @@ class LibvirtDriver(driver.ComputeDriver):
+@@ -1710,7 +1738,7 @@ class LibvirtDriver(driver.ComputeDriver):
          if (self._has_min_version(MIN_LIBVIRT_LIVESNAPSHOT_VERSION,
                                    MIN_QEMU_LIVESNAPSHOT_VERSION,
                                    REQ_HYPERVISOR_LIVESNAPSHOT)
@@ -104,7 +87,7 @@ index cec2013..da071eb 100644
               and not CONF.ephemeral_storage_encryption.enabled):
              live_snapshot = True
              # Abort is an idempotent operation, so make sure any block
-@@ -2988,6 +3022,8 @@ class LibvirtDriver(driver.ComputeDriver):
+@@ -3029,6 +3057,8 @@ class LibvirtDriver(driver.ComputeDriver):
                  size = None
  
              backend = image('disk')
@@ -113,7 +96,7 @@ index cec2013..da071eb 100644
              if backend.SUPPORTS_CLONE:
                  def clone_fallback_to_fetch(*args, **kwargs):
                      try:
-@@ -4553,6 +4589,8 @@ class LibvirtDriver(driver.ComputeDriver):
+@@ -4577,6 +4607,8 @@ class LibvirtDriver(driver.ComputeDriver):
                                 CONF.libvirt.images_volume_group)
          elif CONF.libvirt.images_type == 'rbd':
              info = LibvirtDriver._get_rbd_driver().get_pool_info()
@@ -122,7 +105,15 @@ index cec2013..da071eb 100644
          else:
              info = libvirt_utils.get_fs_info(CONF.instances_path)
  
-@@ -5503,7 +5541,9 @@ class LibvirtDriver(driver.ComputeDriver):
+@@ -5124,7 +5156,6 @@ class LibvirtDriver(driver.ComputeDriver):
+         """
+         if (CONF.libvirt.images_type == dest_check_data.get('image_type') and
+                 self.image_backend.backend().is_shared_block_storage()):
+-            # NOTE(dgenin): currently true only for RBD image backend
+             return True
+ 
+         if (dest_check_data.get('is_shared_instance_path') and
+@@ -5532,7 +5563,9 @@ class LibvirtDriver(driver.ComputeDriver):
                  raise exception.DestinationDiskExists(path=instance_dir)
              os.mkdir(instance_dir)
  
@@ -133,19 +124,30 @@ index cec2013..da071eb 100644
                  # Ensure images and backing files are present.
                  self._create_images_and_backing(context, instance,
                                                  instance_dir, disk_info)
-@@ -5689,8 +5729,9 @@ class LibvirtDriver(driver.ComputeDriver):
-                           instance_name)
+@@ -5729,6 +5762,10 @@ class LibvirtDriver(driver.ComputeDriver):
+             disk_dev = vol['mount_device'].rpartition("/")[2]
+             volume_devices.add(disk_dev)
+ 
++        no_block_devices = (
++            block_device_info is not None and
++            self.image_backend.backend().is_shared_block_storage())
++
+         disk_info = []
+         doc = etree.fromstring(xml)
+         disk_nodes = doc.findall('.//devices/disk')
+@@ -5755,6 +5792,11 @@ class LibvirtDriver(driver.ComputeDriver):
+                           'volume', {'path': path, 'target': target})
                  continue
  
--            if disk_type not in ['file', 'block']:
--                LOG.debug('skipping disk because it looks like a volume', path)
-+            if disk_type not in ['file']:
-+                LOG.debug('skipping disk %s because it looks like a volume',
-+                          path)
-                 continue
- 
-             if target in volume_devices:
-@@ -6081,6 +6122,25 @@ class LibvirtDriver(driver.ComputeDriver):
++            if no_block_devices and disk_type == 'block':
++                LOG.debug('skipping disk %(path)s as it may belong to '
++                          'used shared block storage')
++                continue
++
+             # get the real disk size or
+             # raise a localized error if image is unavailable
+             if disk_type == 'file':
+@@ -6147,6 +6189,25 @@ class LibvirtDriver(driver.ComputeDriver):
              self._cleanup_failed_migration(inst_base)
              utils.execute('mv', inst_base_resize, inst_base)
  
@@ -172,7 +174,7 @@ index cec2013..da071eb 100644
                                              instance,
                                              block_device_info)
 diff --git a/nova/virt/libvirt/imagebackend.py b/nova/virt/libvirt/imagebackend.py
-index a539335..2ee440a 100644
+index c7549fa..10844fc 100644
 --- a/nova/virt/libvirt/imagebackend.py
 +++ b/nova/virt/libvirt/imagebackend.py
 @@ -37,6 +37,7 @@ from nova.virt.libvirt import config as vconfig
@@ -223,7 +225,7 @@ index a539335..2ee440a 100644
 +        pass
 +
 +    @staticmethod
-+    def disonnect_disks(instance):
++    def disconnect_disks(instance):
 +        """Disconnect instance disks from the compute host.
 +
 +        :param instance: instance object
@@ -233,25 +235,16 @@ index a539335..2ee440a 100644
  
  class Raw(Image):
      def __init__(self, instance=None, disk_name=None, path=None):
-@@ -738,6 +782,126 @@ class Rbd(Image):
-         raise exception.ImageUnacceptable(image_id=image_id_or_uri,
+@@ -737,6 +781,108 @@ class Rbd(Image):
                                            reason=reason)
  
-+    def create_snap(self, name):
-+        return self.driver.create_snap(self.rbd_name, name)
-+
-+    def remove_snap(self, name, ignore_errors=False):
-+        return self.driver.remove_snap(self.rbd_name, name, ignore_errors)
-+
-+    def rollback_to_snap(self, name):
-+        return self.driver.rollback_to_snap(self.rbd_name, name)
-+
-+
+ 
 +class Sio(Image):
 +
 +    def __init__(self, instance=None, disk_name=None, path=None):
 +        # is_block_dev is False because True prevents ephemerals to be
-+        # formatted and mounted due to a bug create_image call path
++        # formatted and mounted due to a bug with creating of disk template
++        # in create_image call path
 +        super(Sio, self).__init__("block", "raw", is_block_dev=False)
 +
 +        # TODO(emc): Currently we assume a static ScaleIO protection domain
@@ -262,13 +255,16 @@ index a539335..2ee440a 100644
 +        self.driver = sio_utils.SIODriver()
 +
 +        if path:
-+            vol_id = ''.split('-')[-1]
-+            self.volume_name = self.driver.get_volname(None, vol_id=vol_id)
++            vol_id = path.split('-')[-1]
++            self.volume_name = self.driver.get_volume_name(vol_id)
 +            self.path = path
 +        else:
 +            self.volume_name = sio_utils.get_sio_volume_name(instance,
 +                                                             disk_name)
-+            self.path = self.driver.get_volpath(self.volume_name)
++            if self.driver.check_volume_exists(self.volume_name):
++                self.path = self.driver.get_volume_path(self.volume_name)
++            else:
++                self.path = None
 +
 +    @staticmethod
 +    def is_shared_block_storage():
@@ -288,20 +284,16 @@ index a539335..2ee440a 100644
 +        return False
 +
 +    def create_image(self, prepare_template, base, size, *args, **kwargs):
-+        if not sio_utils.verify_volume_size(size):
-+            raise exception.NovaException(
-+                _('Invalid disk size %s GB for the instance. The correct size'
-+                  'must be multiple of 8 GB. Choose another flavor') %
-+                (size / float(units.Gi) if isinstance(size, int) else size))
-+        if self.driver.get_volid(self.volume_name):
++        sio_utils.verify_volume_size(size)
++        if self.driver.check_volume_exists(self.volume_name):
 +            vol_size = self.get_disk_size(self.volume_name)
 +            if size < vol_size:
 +                LOG.debug('Cannot resize volume %s to a smaller size.',
 +                          self.volume_name)
 +            elif size > vol_size:
-+                self.driver.extend_volume(size, self.volume_name)
++                self.driver.extend_volume(self.volume_name, size)
 +
-+            self.path = self.driver.connect_volume(self.volume_name)
++            self.path = self.driver.map_volume(self.volume_name)
 +        else:
 +            if not os.path.exists(base):
 +                prepare_template(target=base, max_size=size, *args, **kwargs)
@@ -309,11 +301,12 @@ index a539335..2ee440a 100644
 +            base_size = disk.get_disk_size(base)
 +            self.verify_base_size(base, size, base_size=base_size)
 +
-+            self._create_volume(name=self.volume_name, size=size)
++            self.driver.create_volume(self.volume_name, size)
++            self.path = self.driver.map_volume(self.volume_name)
 +            self.driver.import_image(base, self.path)
 +
 +    def get_disk_size(self, name):
-+        return self.driver.get_volsize(self.volume_name)
++        return self.driver.get_volume_size(self.volume_name)
 +
 +    def libvirt_info(self, disk_bus, disk_dev, device_type, cache_mode,
 +                     extra_specs, hypervisor_version):
@@ -326,24 +319,14 @@ index a539335..2ee440a 100644
 +            extra_specs, hypervisor_version)
 +
 +        # set is_block_dev to select proper backend driver,
-+        # because ScaleIO volumes are block devices indeed
++        # because ScaleIO volumes are block devices in fact
 +        info.driver_name = libvirt_utils.pick_disk_driver_name(
 +            hypervisor_version, is_block_dev=True)
 +
 +        return info
 +
-+    def _create_volume(self, name, size):
-+        vol_id, vol_name = self.driver.create(name, size)
-+        if not vol_id:
-+            LOG.error(_LE("Create image failed, could not create ScaleIO "
-+                          "volume."))
-+            raise exception.NovaException(_("Failed to spawn instance due to "
-+                                            "volume create error. Please "
-+                                            "check logs for storage errors"))
-+        self.path = self.driver.connect_volume(vol_name=vol_name)
-+
 +    def snapshot_extract(self, target, out_format):
-+        images.convert_image(self.path, target, out_format, run_as_root=True)
++        self.driver.export_image(self.path, target, out_format)
 +
 +    def create_snap(self, name):
 +        snap_name = '%s_%s' % (self.volume_name, name)
@@ -351,16 +334,17 @@ index a539335..2ee440a 100644
 +
 +    def remove_snap(self, name, ignore_errors=False):
 +        snap_name = '%s_%s' % (self.volume_name, name)
-+        self.driver.remove(snap_name)
++        self.driver.remove_volume(snap_name)
 +
 +    def rollback_to_snap(self, name):
 +        snap_name = '%s_%s' % (self.volume_name, name)
 +        self.driver.rollback_to_snapshot(self.volume_name, snap_name)
 +
- 
++
  class Backend(object):
      def __init__(self, use_cow):
-@@ -746,6 +910,7 @@ class Backend(object):
+         self.BACKEND = {
+@@ -744,6 +890,7 @@ class Backend(object):
              'qcow2': Qcow2,
              'lvm': Lvm,
              'rbd': Rbd,
@@ -369,10 +353,10 @@ index a539335..2ee440a 100644
          }
  
 diff --git a/nova/virt/libvirt/sio_utils.py b/nova/virt/libvirt/sio_utils.py
-index e69de29..49aa165 100644
+index e69de29..0745560 100644
 --- a/nova/virt/libvirt/sio_utils.py
 +++ b/nova/virt/libvirt/sio_utils.py
-@@ -0,0 +1,408 @@
+@@ -0,0 +1,330 @@
 +# Copyright (c) 2015 EMC Corporation
 +# All Rights Reserved
 +#
@@ -387,7 +371,8 @@ index e69de29..49aa165 100644
 +
 +from oslo.utils import units
 +
-+from nova.i18n import _, _LE, _LI
++from nova import exception
++from nova.i18n import _
 +from nova.openstack.common import log as logging
 +from nova.openstack.common import processutils
 +from nova import utils
@@ -407,7 +392,6 @@ index e69de29..49aa165 100644
 +    CONF.register_opts(siolib.SIOOPTS, siolib.SIOGROUP)
 +
 +VOLSIZE_MULTIPLE_GB = 8
-+EPHEMERAL_SUFFIX = '-empdisk'
 +
 +
 +def verify_volume_size(requested_size):
@@ -417,8 +401,14 @@ index e69de29..49aa165 100644
 +    :param requested_size: Size in bytes
 +    :return: True if the size fit to ScaleIO, False otherwise
 +    """
-+    return (requested_size and
-+            requested_size % (units.Gi * VOLSIZE_MULTIPLE_GB) == 0)
++    if (not requested_size or
++            requested_size % (units.Gi * VOLSIZE_MULTIPLE_GB)):
++        raise exception.NovaException(
++            _('Invalid disk size %s GB for the instance. The correct size '
++              'must be multiple of 8 GB. Choose another flavor') %
++            (requested_size / float(units.Gi)
++             if isinstance(requested_size, int) else
++             requested_size))
 +
 +
 +_standard_disk_prefix = re.compile(r'^disk($|(\.(?=.)))')
@@ -451,7 +441,6 @@ index e69de29..49aa165 100644
 +    :param device_path: Full device path to probe
 +    :return: Nothing
 +    """
-+
 +    try:
 +        utils.execute('partprobe', device_path, run_as_root=run_as_root)
 +    except processutils.ProcessExecutionError as exc:
@@ -465,13 +454,12 @@ index e69de29..49aa165 100644
 +    sp_name = None
 +
 +    def __init__(self, domain_name=None, pool_name=None):
-+        """Initialize ScaleIODriver object
++        """Initialize ScaleIODriver object.
 +
 +        :param domain_name: ScaleIO protection domain name
 +        :param pool_name:  ScaleIO storage pool name
 +        :return: Nothing
 +        """
-+
 +        if siolib is None:
 +            raise RuntimeError(_('ScaleIO python libraries not found'))
 +
@@ -483,306 +471,224 @@ index e69de29..49aa165 100644
 +        self.ioctx = scaleio.ScaleIO(pd_name=self.pd_name,
 +                                     sp_name=self.sp_name)
 +
-+    def create(self, name, size):
-+        """Create a ScaleIO volume
++    def get_pool_info(self):
++        """Return the total storage pool info."""
++
++        used_bytes, total_bytes, free_bytes = (
++            self.ioctx.storagepool_size(by_sds=True))
++        return {'total': total_bytes,
++                'free': free_bytes,
++                'used': used_bytes}
++
++    def create_volume(self, name, size):
++        """Create a ScaleIO volume.
 +
 +        :param name: Volume name to use
-+                     (this will be base64 encoded by ScaleIO)
 +        :param size: Size of volume to create
-+        :return: Base64 encoded ScaleIO volume name
++        :return: Nothing
 +        """
++        # NOTE(ft): siolib does not raise an exception if the volume
++        # already exists
++        self.ioctx.create_volume(name, size / units.Gi)
 +
-+        vol_id = vol_name = None
-+
-+        try:
-+            vol_id, vol_name = self.ioctx.create_volume(name, size / units.Gi)
-+            LOG.info(_LI("SIODriver --> Created ScaleIO volume of size %sGB "
-+                         "with id=%s and name=%s")
-+                     % (size / float(units.Gi), vol_id, vol_name))
-+        except Exception:
-+            LOG.exception(_LE("SIODriver --> Error creating volume."))
-+
-+        return vol_id, vol_name
-+
-+    def remove(self, name):
++    def remove_volume(self, name, ignore_mappings=False):
 +        """Deletes (removes) a ScaleIO volume.
 +
 +        Removal of a volume erases all the data on the corresponding volume.
++
 +        :param name: String ScaleIO volume name to remove
++        :param ignore_mappings: Remove even if the volume is mapped to SDCs
 +        :return: Nothing
 +        """
++        vol_id = self.ioctx.get_volumeid(name)
++        if vol_id:
++            self.ioctx.delete_volume(vol_id, unmap_on_delete=ignore_mappings)
 +
-+        try:
-+            self.ioctx.delete_volume(name)
-+            LOG.info(_LI("SIODriver --> Removed ScaleIO volume with name=%s")
-+                     % name)
-+        except Exception:
-+            LOG.exception(_LE("SIODriver --> Error removing volume"))
-+
-+    def connect_volume(self, vol_name):
++    def map_volume(self, name):
 +        """Connect to ScaleIO volume.
 +
 +        Map ScaleIO volume to local block device
++
 +        :param name: String ScaleIO volume name to attach
 +        :return: Local attached volume path
 +        """
-+
-+        path = None
-+        vol_id = self.get_volid(vol_name)
-+        if vol_id:
-+            try:
-+                self.ioctx.attach_volume(vol_id)
-+                path = self.ioctx.get_volumepath(vol_id)
-+                LOG.info(_LI("SIODriver --> Attached ScaleIO volume %s to "
-+                             "path %s") % (vol_name, path))
-+            except Exception:
-+                LOG.exception(_LE("SIODriver --> Error attaching volume."))
++        vol_id = self.get_volume_id(name)
++        self.ioctx.attach_volume(vol_id)
++        path = self.ioctx.get_volumepath(vol_id)
++        # NOTE(ft): siolib does not raise an exception if it failed to attach
++        # the volume
++        if not path:
++            raise RuntimeError(_('Failed to attach disk volume %s') % name)
 +
 +        return path
 +
-+    def disconnect_volume(self, vol_name):
++    def unmap_volume(self, name):
 +        """Disconnect from ScaleIO volume.
 +
 +        Unmap ScaleIO volume from local block device
++
 +        :param name: String ScaleIO volume name to detach
 +        :return: Nothing
 +        """
-+
-+        vol_id = self.get_volid(vol_name)
-+        try:
++        vol_id = self.ioctx.get_volumeid(name)
++        if vol_id:
 +            self.ioctx.detach_volume(vol_id)
-+            LOG.info(_LI("SIODriver --> Detached ScaleIO volume %s")
-+                     % vol_name)
-+        except Exception:
-+            LOG.exception(_LE("SIODriver --> Error detaching volume."))
 +
-+    def remove_volume(self, instance=None, vol_name=None):
-+        """Perform a unmap and deletion of a ScaleIO volume.
++    def check_volume_exists(self, name):
++        """Check if ScaleIO volume exists.
 +
-+        If volume name is specified the instance uuid is overridden. The UUID
-+        is used to create the volume and it is used to perform operations when
-+        a volume name is not explicitly given.
-+
-+        :param instance: Data structure used by nova.compute to store
-+                         details regarding an instance. This object is
-+                         returned by the DB layer
-+        :param vol_name: Explicitly define a volume name to perform op on
-+        :return: Nothing
++        :param name: String ScaleIO volume name to check
++        :return: True if the volume exists, False otherwise
 +        """
++        return bool(self.ioctx.get_volumeid(name))
 +
-+        if not vol_name and instance:
-+            # TODO(emc): get uuid from instance structure if error raise nova
-+            # exception
-+            vol_name = '%s' % instance['uuid']
-+        elif not instance and not vol_name:
-+            raise RuntimeError(_("Cannot remove volume instance and or volume "
-+                                 "name not defined."))
-+
-+        if vol_name:
-+            try:
-+                # detach
-+                self.disconnect_volume(vol_name)
-+                # remove
-+                self.remove(vol_name)
-+            except Exception:
-+                LOG.exception(_LE("SIODriver --> Error detaching and removing "
-+                                  "volume."))
-+
-+    def get_volid(self, name):
++    def get_volume_id(self, name):
 +        """Return the ScaleIO volume ID
 +
 +        :param name: String ScaleIO volume name to retrieve id from
 +        :return: ScaleIO volume id
 +        """
 +        vol_id = self.ioctx.get_volumeid(name)
-+        LOG.debug("SIODriver --> Retrieved ScaleIO volume ID %s" % vol_id)
++        if not vol_id:
++            raise RuntimeError(_('Disk volume %s does not exist') % name)
 +        return vol_id
 +
-+    def get_volname(self, name, vol_id=None):
++    def get_volume_name(self, vol_id):
 +        """Return the ScaleIO volume name.
 +
-+        The name is based on its original created
-+        name (usually the instance uuid) or the volume id.
-+
-+        :param name: String ScaleIO volume name to retrieve name from
-+        :return: Base64 encoded volume name
++        :param vol_id: String ScaleIO volume id to retrieve name from
++        :return: ScaleIO volume name
 +        """
-+
 +        vol_name = None
++        try:
++            vol_name = self.ioctx.get_volumename(vol_id)
++        except AttributeError:
++            # Workaround siolib bug if the volume does not exist
++            pass
 +
-+        if not vol_id and name:
-+            vol_id = self.get_volid(name)
-+
-+        if vol_id:
-+            try:
-+                vol_name = self.ioctx.get_volumename(vol_id)
-+                LOG.info(_LI("SIODriver --> Retrieved ScaleIO volume name %s")
-+                         % vol_name)
-+            except Exception:
-+                LOG.exception(_LE("SIODriver --> Error retrieving volume "
-+                                  "name."))
++        if not vol_name:
++            raise RuntimeError(_('Disk volume %s does not exist') % vol_id)
 +
 +        return vol_name
 +
-+    def get_volpath(self, name, vol_id=None):
++    def get_volume_path(self, name):
 +        """Return the volume device path location.
 +
 +        :param name: String ScaleIO volume name to get path information about
-+        :return: Volume device path
++        :return: Local attached volume path, None if the volume does not exist
++                 or is not connected
 +        """
++        vol_id = self.get_volume_id(name)
++        return self.ioctx.get_volumepath(vol_id)
 +
-+        vol_path = None
-+
-+        if not vol_id and name:
-+            vol_id = self.get_volid(name)
-+
-+        if vol_id:
-+            try:
-+                vol_path = self.ioctx.get_volumepath(vol_id)
-+                LOG.info(_LI("SIODriver --> Retrieved ScaleIO volume path %s")
-+                         % vol_path)
-+            except Exception:
-+                LOG.exception(_LE("SIODriver --> Error retrieving volume "
-+                                  "path."))
-+
-+        return vol_path
-+
-+    def get_volsize(self, name, vol_id=None):
++    def get_volume_size(self, name):
 +        """Return the size of the ScaleIO volume
 +
 +        :param name: String ScaleIO volume name to get path information about
 +        :return: Size of ScaleIO volume
 +        """
-+
-+        vol_size = 0
-+
-+        if not vol_id and name:
-+            vol_id = self.get_volid(name)
-+
-+        if vol_id:
-+            try:
-+                vol_size = self.ioctx.get_volumesize(vol_id)
-+                LOG.info(_LI("SIODriver --> Retrieved ScaleIO volume size "
-+                             "of %s kb") % vol_size)
-+            except Exception:
-+                LOG.exception(_LE("SIODriver --> Error retrieving volume size "
-+                                 "information."))
-+
++        vol_id = self.get_volume_id(name)
++        vol_size = self.ioctx.get_volumesize(vol_id)
 +        return vol_size * units.Ki
 +
 +    def import_image(self, source, dest):
 +        """Import glance image onto actual ScaleIO block device.
 +
 +        :param source: Glance image source
-+        :param dest: Target block device
++        :param dest: Target ScaleIO block device
 +        :return: Nothing
 +        """
-+
-+        # TODO(emc): Error checking???
-+        # Convert images
 +        images.convert_image(source, dest, 'raw', run_as_root=True)
-+        LOG.info(_LI("SIODriver --> Imported source image %s to %s with format"
-+                     " raw for ScaleIO") % (source, dest))
-+
-+        LOG.info(_LI("SIODriver --> Probing for device partitions @ %s")
-+                 % dest)
 +        # trigger OS probe of partition devices
 +        probe_partitions(device_path=dest, run_as_root=True)
 +
-+    def get_pool_info(self):
-+        """Return the total storage pool info."""
-+        used_bytes, total_bytes, free_bytes = (
-+            self.ioctx.storagepool_size(by_sds=True))
++    def export_image(self, source, dest, out_format):
++        """Export ScaleIO volume.
 +
-+        LOG.info(_LI("SIODriver --> Storage Statistics total=%d bytes, "
-+                     "used=%d bytes, free=%d bytes")
-+                 % (total_bytes, used_bytes, free_bytes))
-+        stats = {'total': total_bytes,
-+                 'free': free_bytes,
-+                 'used': used_bytes}
++        :param source: Local attached ScaleIO volume path to export from
++        :param dest: Target path
++        :param out_format: Output format (raw, qcow2, etc)
++        :return: Nothing
++        """
++        images.convert_image(source, dest, out_format, run_as_root=True)
 +
-+        return stats
-+
-+    def extend_volume(self, new_size, name, vol_id=None):
++    def extend_volume(self, name, new_size):
 +        """Extend the size of a volume.
 +
 +        This method is used primarily with openstack resize operation
-+        :param name:
-+        :param new_size:
-+        :param vol_id:
-+        :return:
++
++        :param name: String ScaleIO volume name to extend
++        :param new_size: Size of the volume to extend to
++        :return: Nothing
 +        """
++        vol_id = self.get_volume_id(name)
++        self.ioctx.extend_volume(vol_id, new_size / units.Gi)
++        # NOTE(ft): siolib does not raise an exception if it cannot extend
++        # the volume
++        if self.get_volume_size(name) != new_size:
++            raise RuntimeError(_('Failed to extend disk volume %s') % name)
 +
-+        if not vol_id and name:
-+            vol_id = self.get_volid(name)
-+
-+        if not vol_id:
-+            return
-+
-+        try:
-+            self.ioctx.extend_volume(vol_id, new_size / units.Gi)
-+            LOG.info(
-+                _LI("SIODriver --> Extended ScaleIO volume %s to size %sGB")
-+                % (name, new_size / float(units.Gi)))
-+        except Exception:
-+            LOG.exception(_LE("SIODriver --> Error extending volume."))
-+
-+    def snapshot_volume(self, vol_name, name):
++    def snapshot_volume(self, name, snapshot_name):
 +        """Snapshot a volume.
 +
-+        :param vol_name:
-+        :param name:
-+        :return:
++        :param name: String ScaleIO volume name to make a snapshot
++        :param snapshot_name: String ScaleIO snapshot name to create
++        :return: Nothing
 +        """
-+        vol_id = self.get_volid(vol_name);
++        vol_id = self.get_volume_id(name)
++        snap_gid, _vol_list = self.ioctx.snapshot_volume(snapshot_name, vol_id)
++        # NOTE(ft): siolib does not rais an exception if it cannot create
++        # the snapshot
++        if not snap_gid:
++            raise RuntimeError(_('Failed to create snapshot of disk volume %s')
++                               % name)
 +
-+        if not vol_id:
-+            return
-+
-+        try:
-+            self.ioctx.snapshot_volume(name, vol_id)
-+            LOG.info(_LI("SIODriver --> Snapshot ScaleIO volume %s to %s")
-+                     % (vol_name, name))
-+        except Exception:
-+            LOG.exception(_LE("SIODriver --> Error snapshoting volume."))
-+
-+    def rollback_to_snapshot(self, vol_name, snap_name):
++    def rollback_to_snapshot(self, name, snapshot_name):
 +        """Rollback a snapshot.
 +
-+        :param vol_name:
-+        :param snap_name:
-+        :return:
++        :param name: String ScaleIO volume name to rollback to a snapshot
++        :param snapshot_name: String ScaleIO snapshot name to rollback to
++        :return: Nothing
 +        """
-+        try:
-+            self.remove_volume(vol_name=vol_name)
-+            self.ioctx.rename_volume(snap_name, vol_name)
-+            self.connect_volume(vol_name)
-+        except Exception:
-+            LOG.exception(_LE("SIODriver --> Error rollbacking volume."))
++        snap_id = self.get_volume_id(snapshot_name)
++        self.remove_volume(name, ignore_mappings=True)
++        self.ioctx.rename_volume(snap_id, name)
++        if not self.check_volume_exists(name):
++            raise RuntimeError(_('Failed to rename snapshot %(snapshot)s '
++                                 'to disk volume %(disk)s') %
++                               {'disk': name,
++                                'snapshot_name': snapshot_name})
++        self.map_volume(name)
++
++    def map_volumes(self, instance):
++        """Map all instance volumes to its compute host.
++
++        :param intance: Instance dict
++        :return: Nothing
++        """
++        volumes = self.ioctx.list_volume_names()
++        prefix = 'i-%08x' % instance['id']
++        volumes = (vol for vol in volumes if vol.startswith(prefix))
++        for volume in volumes:
++            self.map_volume(volume)
 +
 +    def cleanup_volumes(self, instance, unmap_only=False):
 +        """Cleanup all instance volumes.
 +
-+        :param instance:
-+        :return:
++        :param instance: Instance dict
++        :param unmap_only: Do not remove, only unmap from the instance host
++        :return: Nothing
 +        """
 +        volumes = self.ioctx.list_volume_names()
 +        prefix = 'i-%08x' % instance['id']
 +        volumes = (vol for vol in volumes if vol.startswith(prefix))
 +        for volume in volumes:
 +            if unmap_only:
-+                self.disconnect_volume(volume)
++                self.unmap_volume(volume)
 +            else:
-+                self.remove_volume(vol_name=volume)
-+
-+    def map_volumes(self, instance):
-+        volumes = self.ioctx.list_volume_names()
-+        prefix = 'i-%08x' % instance['id']
-+        volumes = (vol for vol in volumes if vol.startswith(prefix))
-+        for volume in volumes:
-+            self.connect_volume(volume)
++                self.remove_volume(volume, ignore_mappings=True)
 diff --git a/nova/virt/libvirt/utils.py b/nova/virt/libvirt/utils.py
-index c05de93..5e3c55e 100644
+index 6f66107..1ae4eec 100644
 --- a/nova/virt/libvirt/utils.py
 +++ b/nova/virt/libvirt/utils.py
 @@ -48,6 +48,8 @@ CONF.register_opts(libvirt_opts, 'libvirt')
@@ -794,7 +700,7 @@ index c05de93..5e3c55e 100644
  
  def execute(*args, **kwargs):
      return utils.execute(*args, **kwargs)
-@@ -419,6 +421,8 @@ def find_disk(virt_dom):
+@@ -425,6 +427,8 @@ def find_disk(virt_dom):
  
  def get_disk_type(path):
      """Retrieve disk type (raw, qcow2, lvm) for given file."""

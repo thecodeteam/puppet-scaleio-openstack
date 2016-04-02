@@ -1,5 +1,5 @@
 diff --git a/nova/virt/libvirt/driver.py b/nova/virt/libvirt/driver.py
-index 1b5c4b9..b062a5c 100644
+index 1b5c4b9..a8156e8 100644
 --- a/nova/virt/libvirt/driver.py
 +++ b/nova/virt/libvirt/driver.py
 @@ -99,6 +99,7 @@ from nova.virt.libvirt import imagecache
@@ -19,24 +19,7 @@ index 1b5c4b9..b062a5c 100644
  
          if destroy_disks or (
                  migrate_data and migrate_data.get('is_shared_block_storage',
-@@ -890,8 +893,14 @@ class LibvirtDriver(driver.ComputeDriver):
- 
-     def _detach_encrypted_volumes(self, instance):
-         """Detaches encrypted volumes attached to instance."""
--        disks = jsonutils.loads(self.get_instance_disk_info(instance))
--        encrypted_volumes = filter(dmcrypt.is_encrypted,
-+        pattern = '%s_' % instance.uuid
-+
-+        def belongs_to_instance(path):
-+            return (dmcrypt.is_encrypted(path) and
-+                    path.rpartition('/')[2].startswith(pattern))
-+
-+        disks = dmcrypt.list_volumes()
-+        encrypted_volumes = filter(belongs_to_instance,
-                                    [disk['path'] for disk in disks])
-         for path in encrypted_volumes:
-             dmcrypt.delete_volume(path)
-@@ -924,6 +933,15 @@ class LibvirtDriver(driver.ComputeDriver):
+@@ -924,6 +927,15 @@ class LibvirtDriver(driver.ComputeDriver):
                  ceph_conf=CONF.libvirt.images_rbd_ceph_conf,
                  rbd_user=CONF.libvirt.rbd_user)
  
@@ -52,7 +35,7 @@ index 1b5c4b9..b062a5c 100644
      def _cleanup_rbd(self, instance):
          LibvirtDriver._get_rbd_driver().cleanup_volumes(instance)
  
-@@ -957,6 +975,10 @@ class LibvirtDriver(driver.ComputeDriver):
+@@ -957,6 +969,10 @@ class LibvirtDriver(driver.ComputeDriver):
              return disks
          return []
  
@@ -63,7 +46,7 @@ index 1b5c4b9..b062a5c 100644
      def get_volume_connector(self, instance):
          if self._initiator is None:
              self._initiator = libvirt_utils.get_iscsi_initiator()
-@@ -1009,10 +1031,22 @@ class LibvirtDriver(driver.ComputeDriver):
+@@ -1009,10 +1025,22 @@ class LibvirtDriver(driver.ComputeDriver):
              utils.execute('rm', '-rf', target, delay_on_retry=True,
                            attempts=5)
  
@@ -86,7 +69,7 @@ index 1b5c4b9..b062a5c 100644
  
      def _get_volume_driver(self, connection_info):
          driver_type = connection_info.get('driver_volume_type')
-@@ -1352,7 +1386,7 @@ class LibvirtDriver(driver.ComputeDriver):
+@@ -1352,7 +1380,7 @@ class LibvirtDriver(driver.ComputeDriver):
          image_format = CONF.libvirt.snapshot_image_format or source_type
  
          # NOTE(bfilippov): save lvm and rbd as raw
@@ -95,7 +78,7 @@ index 1b5c4b9..b062a5c 100644
              image_format = 'raw'
  
          metadata = self._create_snapshot_metadata(base,
-@@ -1375,7 +1409,7 @@ class LibvirtDriver(driver.ComputeDriver):
+@@ -1375,7 +1403,7 @@ class LibvirtDriver(driver.ComputeDriver):
          if (self._host.has_min_version(MIN_LIBVIRT_LIVESNAPSHOT_VERSION,
                                         MIN_QEMU_LIVESNAPSHOT_VERSION,
                                         REQ_HYPERVISOR_LIVESNAPSHOT)
@@ -104,7 +87,7 @@ index 1b5c4b9..b062a5c 100644
               and not CONF.ephemeral_storage_encryption.enabled
               and not CONF.workarounds.disable_libvirt_livesnapshot):
              live_snapshot = True
-@@ -2784,6 +2818,8 @@ class LibvirtDriver(driver.ComputeDriver):
+@@ -2784,6 +2812,8 @@ class LibvirtDriver(driver.ComputeDriver):
                  size = None
  
              backend = image('disk')
@@ -113,7 +96,7 @@ index 1b5c4b9..b062a5c 100644
              if backend.SUPPORTS_CLONE:
                  def clone_fallback_to_fetch(*args, **kwargs):
                      try:
-@@ -4539,6 +4575,8 @@ class LibvirtDriver(driver.ComputeDriver):
+@@ -4539,6 +4569,8 @@ class LibvirtDriver(driver.ComputeDriver):
                                 CONF.libvirt.images_volume_group)
          elif CONF.libvirt.images_type == 'rbd':
              info = LibvirtDriver._get_rbd_driver().get_pool_info()
@@ -122,7 +105,7 @@ index 1b5c4b9..b062a5c 100644
          else:
              info = libvirt_utils.get_fs_info(CONF.instances_path)
  
-@@ -5113,7 +5151,6 @@ class LibvirtDriver(driver.ComputeDriver):
+@@ -5113,7 +5145,6 @@ class LibvirtDriver(driver.ComputeDriver):
          """
          if (CONF.libvirt.images_type == dest_check_data.get('image_type') and
                  self.image_backend.backend().is_shared_block_storage()):
@@ -130,7 +113,7 @@ index 1b5c4b9..b062a5c 100644
              return True
  
          if (dest_check_data.get('is_shared_instance_path') and
-@@ -5825,7 +5862,9 @@ class LibvirtDriver(driver.ComputeDriver):
+@@ -5825,7 +5856,9 @@ class LibvirtDriver(driver.ComputeDriver):
                  raise exception.DestinationDiskExists(path=instance_dir)
              os.mkdir(instance_dir)
  
@@ -141,19 +124,30 @@ index 1b5c4b9..b062a5c 100644
                  # Ensure images and backing files are present.
                  self._create_images_and_backing(
                      context, instance, instance_dir, disk_info,
-@@ -6087,8 +6126,9 @@ class LibvirtDriver(driver.ComputeDriver):
-                           instance_name)
+@@ -6070,6 +6103,10 @@ class LibvirtDriver(driver.ComputeDriver):
+             disk_dev = vol['mount_device'].rpartition("/")[2]
+             volume_devices.add(disk_dev)
+ 
++        no_block_devices = (
++            block_device_info is not None and
++            self.image_backend.backend().is_shared_block_storage())
++
+         disk_info = []
+         doc = etree.fromstring(xml)
+         disk_nodes = doc.findall('.//devices/disk')
+@@ -6096,6 +6133,11 @@ class LibvirtDriver(driver.ComputeDriver):
+                           'volume', {'path': path, 'target': target})
                  continue
  
--            if disk_type not in ['file', 'block']:
--                LOG.debug('skipping disk because it looks like a volume', path)
-+            if disk_type not in ['file']:
-+                LOG.debug('skipping disk %s because it looks like a volume',
-+                          path)
-                 continue
- 
-             if target in volume_devices:
-@@ -6514,6 +6554,25 @@ class LibvirtDriver(driver.ComputeDriver):
++            if no_block_devices and disk_type == 'block':
++                LOG.debug('skipping disk %(path)s as it may belong to '
++                          'used shared block storage')
++                continue
++
+             # get the real disk size or
+             # raise a localized error if image is unavailable
+             if disk_type == 'file':
+@@ -6514,6 +6556,25 @@ class LibvirtDriver(driver.ComputeDriver):
                                                        image_ref,
                                                        instance)
  
@@ -180,7 +174,7 @@ index 1b5c4b9..b062a5c 100644
                                              instance,
                                              image_meta,
 diff --git a/nova/virt/libvirt/imagebackend.py b/nova/virt/libvirt/imagebackend.py
-index f5e464e..e1d4bf0 100644
+index f5e464e..23b8d8a 100644
 --- a/nova/virt/libvirt/imagebackend.py
 +++ b/nova/virt/libvirt/imagebackend.py
 @@ -40,6 +40,7 @@ from nova.virt.libvirt import config as vconfig
@@ -241,23 +235,7 @@ index f5e464e..e1d4bf0 100644
  
  class Raw(Image):
      def __init__(self, instance=None, disk_name=None, path=None):
-@@ -776,6 +820,15 @@ class Rbd(Image):
-         raise exception.ImageUnacceptable(image_id=image_id_or_uri,
-                                           reason=reason)
- 
-+    def create_snap(self, name):
-+        return self.driver.create_snap(self.rbd_name, name)
-+
-+    def remove_snap(self, name, ignore_errors=False):
-+        return self.driver.remove_snap(self.rbd_name, name, ignore_errors)
-+
-+    def rollback_to_snap(self, name):
-+        return self.driver.rollback_to_snap(self.rbd_name, name)
-+
- 
- class Ploop(Image):
-     def __init__(self, instance=None, disk_name=None, path=None):
-@@ -835,6 +888,111 @@ class Ploop(Image):
+@@ -835,6 +879,108 @@ class Ploop(Image):
              create_ploop_image(base, self.path, size)
  
  
@@ -265,7 +243,8 @@ index f5e464e..e1d4bf0 100644
 +
 +    def __init__(self, instance=None, disk_name=None, path=None):
 +        # is_block_dev is False because True prevents ephemerals to be
-+        # formatted and mounted due to a bug create_image call path
++        # formatted and mounted due to a bug with creating of disk template
++        # in create_image call path
 +        super(Sio, self).__init__("block", "raw", is_block_dev=False)
 +
 +        # TODO(emc): Currently we assume a static ScaleIO protection domain
@@ -305,11 +284,7 @@ index f5e464e..e1d4bf0 100644
 +        return False
 +
 +    def create_image(self, prepare_template, base, size, *args, **kwargs):
-+        if not sio_utils.verify_volume_size(size):
-+            raise exception.NovaException(
-+                _('Invalid disk size %s GB for the instance. The correct size'
-+                  'must be multiple of 8 GB. Choose another flavor') %
-+                (size / float(units.Gi) if isinstance(size, int) else size))
++        sio_utils.verify_volume_size(size)
 +        if self.driver.check_volume_exists(self.volume_name):
 +            vol_size = self.get_disk_size(self.volume_name)
 +            if size < vol_size:
@@ -344,7 +319,7 @@ index f5e464e..e1d4bf0 100644
 +            extra_specs, hypervisor_version)
 +
 +        # set is_block_dev to select proper backend driver,
-+        # because ScaleIO volumes are block devices indeed
++        # because ScaleIO volumes are block devices in fact
 +        info.driver_name = libvirt_utils.pick_disk_driver_name(
 +            hypervisor_version, is_block_dev=True)
 +
@@ -369,7 +344,7 @@ index f5e464e..e1d4bf0 100644
  class Backend(object):
      def __init__(self, use_cow):
          self.BACKEND = {
-@@ -843,7 +1001,8 @@ class Backend(object):
+@@ -843,7 +989,8 @@ class Backend(object):
              'lvm': Lvm,
              'rbd': Rbd,
              'ploop': Ploop,
@@ -379,113 +354,11 @@ index f5e464e..e1d4bf0 100644
          }
  
      def backend(self, image_type=None):
-diff --git a/nova/virt/libvirt/rbd_utils.py b/nova/virt/libvirt/rbd_utils.py
-index 715941b..72d227c 100644
---- a/nova/virt/libvirt/rbd_utils.py
-+++ b/nova/virt/libvirt/rbd_utils.py
-@@ -16,6 +16,8 @@
- 
- import urllib
- 
-+from eventlet import tpool
-+
- try:
-     import rados
-     import rbd
-@@ -28,12 +30,14 @@ from oslo_serialization import jsonutils
- from oslo_utils import excutils
- from oslo_utils import units
- 
-+from nova.compute import task_states
- from nova import exception
- from nova.i18n import _
- from nova.i18n import _LE
- from nova.i18n import _LW
- from nova.openstack.common import loopingcall
- from nova import utils
-+from nova.virt.libvirt import utils as libvirt_utils
- 
- LOG = logging.getLogger(__name__)
- 
-@@ -259,6 +263,9 @@ class RBDDriver(object):
-             try:
-                 rbd.RBD().remove(client.ioctx, volume)
-                 raise loopingcall.LoopingCallDone(retvalue=False)
-+            except rbd.ImageHasSnapshots:
-+                self.remove_snap(volume, libvirt_utils.RESIZE_SNAPSHOT_NAME,
-+                                 ignore_errors=True)
-             except (rbd.ImageBusy, rbd.ImageHasSnapshots):
-                 LOG.warn(_LW('rbd remove %(volume)s in pool %(pool)s '
-                              'failed'),
-@@ -270,7 +277,15 @@ class RBDDriver(object):
-         with RADOSClient(self, self.pool) as client:
- 
-             def belongs_to_instance(disk):
--                return disk.startswith(instance.uuid)
-+                # NOTE(nic): On revert_resize, the cleanup steps for the root
-+                # volume are handled with an "rbd snap rollback" command,
-+                # and none of this is needed (and is, in fact, harmful) so
-+                # filter out non-ephemerals from the list
-+                if instance.task_state == task_states.RESIZE_REVERTING:
-+                    return (disk.startswith(instance.uuid) and
-+                            disk.endswith('disk.local'))
-+                else:
-+                    return disk.startswith(instance.uuid)
- 
-             volumes = rbd.RBD().list(client.ioctx)
-             for volume in filter(belongs_to_instance, volumes):
-@@ -293,3 +308,46 @@ class RBDDriver(object):
-             return {'total': stats['kb'] * units.Ki,
-                     'free': stats['kb_avail'] * units.Ki,
-                     'used': stats['kb_used'] * units.Ki}
-+
-+    def create_snap(self, volume, name):
-+        """Create a snapshot on an RBD object.
-+
-+        :volume: Name of RBD object
-+        :name: Name of snapshot
-+        """
-+        LOG.debug('creating snapshot(%(snap)s) on rbd image(%(img)s)',
-+                  {'snap': name, 'img': volume})
-+        with RBDVolumeProxy(self, volume) as vol:
-+            tpool.execute(vol.create_snap, name)
-+
-+    def remove_snap(self, volume, name, ignore_errors=False):
-+        """Remove a snapshot from an RBD volume.
-+
-+        :volume: Name of RBD object
-+        :name: Name of snapshot
-+        :ignore_errors: whether or not to log warnings on failures
-+        """
-+        with RBDVolumeProxy(self, volume) as vol:
-+            if name in [snap.get('name', '') for snap in vol.list_snaps()]:
-+                LOG.debug('removing snapshot(%(snap)s) on rbd image(%(img)s)',
-+                          {'snap': name, 'img': volume})
-+                tpool.execute(vol.remove_snap, name)
-+            else:
-+                if not ignore_errors:
-+                    LOG.warning(_LW('no snapshot(%(snap)s) found on '
-+                                    'image(%(img)s)'), {'snap': name,
-+                                                        'img': volume})
-+
-+    def rollback_to_snap(self, volume, name):
-+        """Revert an RBD volume to its contents at a snapshot.
-+
-+        :volume: Name of RBD object
-+        :name: Name of snapshot
-+        """
-+        with RBDVolumeProxy(self, volume) as vol:
-+            if name in [snap.get('name', '') for snap in vol.list_snaps()]:
-+                LOG.debug('rolling back rbd image(%(img)s) to '
-+                          'snapshot(%(snap)s)', {'snap': name, 'img': volume})
-+                tpool.execute(vol.rollback_to_snap, name)
-+            else:
-+                raise exception.SnapshotNotFound(snapshot_id=name)
 diff --git a/nova/virt/libvirt/sio_utils.py b/nova/virt/libvirt/sio_utils.py
-index e69de29..b4183fe 100644
+index e69de29..c395bee 100644
 --- a/nova/virt/libvirt/sio_utils.py
 +++ b/nova/virt/libvirt/sio_utils.py
-@@ -0,0 +1,325 @@
+@@ -0,0 +1,332 @@
 +# Copyright (c) 2015 EMC Corporation
 +# All Rights Reserved
 +#
@@ -502,6 +375,7 @@ index e69de29..b4183fe 100644
 +from oslo_log import log as logging
 +from oslo_utils import units
 +
++from nova import exception
 +from nova.i18n import _
 +from nova import utils
 +from nova.virt import images
@@ -529,8 +403,14 @@ index e69de29..b4183fe 100644
 +    :param requested_size: Size in bytes
 +    :return: True if the size fit to ScaleIO, False otherwise
 +    """
-+    return (requested_size and
-+            requested_size % (units.Gi * VOLSIZE_MULTIPLE_GB) == 0)
++    if (not requested_size or
++            requested_size % (units.Gi * VOLSIZE_MULTIPLE_GB)):
++        raise exception.NovaException(
++            _('Invalid disk size %s GB for the instance. The correct size '
++              'must be multiple of 8 GB. Choose another flavor') %
++            (requested_size / float(units.Gi)
++             if isinstance(requested_size, int) else
++             requested_size))
 +
 +
 +_standard_disk_prefix = re.compile(r'^disk($|(\.(?=.)))')
@@ -619,7 +499,7 @@ index e69de29..b4183fe 100644
 +        Removal of a volume erases all the data on the corresponding volume.
 +
 +        :param name: String ScaleIO volume name to remove
-+        :param ignore_mappings: Remove even if the volume is mapped to SDCs 
++        :param ignore_mappings: Remove even if the volume is mapped to SDCs
 +        :return: Nothing
 +        """
 +        vol_id = self.ioctx.get_volumeid(name)
@@ -640,7 +520,7 @@ index e69de29..b4183fe 100644
 +        # NOTE(ft): siolib does not raise an exception if it failed to attach
 +        # the volume
 +        if not path:
-+            raise RuntimeError(_('Failed to attach %s disk') % name)
++            raise RuntimeError(_('Failed to attach disk volume %s') % name)
 +
 +        return path
 +
@@ -672,7 +552,7 @@ index e69de29..b4183fe 100644
 +        """
 +        vol_id = self.ioctx.get_volumeid(name)
 +        if not vol_id:
-+            raise RuntimeError(_('Disk %s does not exist') % name)
++            raise RuntimeError(_('Disk volume %s does not exist') % name)
 +        return vol_id
 +
 +    def get_volume_name(self, vol_id):
@@ -689,7 +569,7 @@ index e69de29..b4183fe 100644
 +            pass
 +
 +        if not vol_name:
-+            raise RuntimeError(_('Disk %s does not exist') % vol_id)
++            raise RuntimeError(_('Disk volume %s does not exist') % vol_id)
 +
 +        return vol_name
 +
@@ -750,7 +630,7 @@ index e69de29..b4183fe 100644
 +        # NOTE(ft): siolib does not raise an exception if it cannot extend
 +        # the volume
 +        if self.get_volume_size(name) != new_size:
-+            raise RuntimeError(_('Failed to extend disk %s') % name)
++            raise RuntimeError(_('Failed to extend disk volume %s') % name)
 +
 +    def snapshot_volume(self, name, snapshot_name):
 +        """Snapshot a volume.
@@ -764,7 +644,7 @@ index e69de29..b4183fe 100644
 +        # NOTE(ft): siolib does not rais an exception if it cannot create
 +        # the snapshot
 +        if not snap_gid:
-+            raise RuntimeError(_('Failed to create snapshot of disk %s')
++            raise RuntimeError(_('Failed to create snapshot of disk volume %s')
 +                               % name)
 +
 +    def rollback_to_snapshot(self, name, snapshot_name):
@@ -778,8 +658,8 @@ index e69de29..b4183fe 100644
 +        self.remove_volume(name, ignore_mappings=True)
 +        self.ioctx.rename_volume(snap_id, name)
 +        if not self.check_volume_exists(name):
-+            raise RuntimeError(_('Failed to rename snapshot disk %(snapshot)s '
-+                                 'to disk %(disk)s') %
++            raise RuntimeError(_('Failed to rename snapshot %(snapshot)s '
++                                 'to disk volume %(disk)s') %
 +                               {'disk': name,
 +                                'snapshot_name': snapshot_name})
 +        self.map_volume(name)

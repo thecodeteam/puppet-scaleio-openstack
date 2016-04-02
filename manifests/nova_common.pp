@@ -51,16 +51,6 @@ define scaleio_openstack::nova_common(
     path => '/bin:/usr/bin',
   } ->
 
-  ini_setting { 'scaleio_nova_compute_config use_cow_images':
-    section => 'DEFAULT',
-    setting => 'use_cow_images',
-    value   => 'False',
-  } ->
-  ini_setting { 'scaleio_nova_compute_config force_raw_images':
-    section => 'DEFAULT',
-    setting => 'force_raw_images',
-    value   => 'False',
-  } ->
   ini_setting { 'scaleio_nova_compute_config images_type':
     section => 'libvirt',
     setting => 'images_type',
