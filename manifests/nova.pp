@@ -30,7 +30,7 @@ class scaleio_openstack::nova(
     if $core_version in ['12.0.1', '12.0.2'] {
       notify { "Detected nova version ${version} - treat as Liberty": }
 
-      nova_common { 'nova common for Liberty':
+      scaleio_openstack::nova_common { 'nova common for Liberty':
         ensure => $ensure,
         gateway_user => $gateway_user,
         gateway_password => $gateway_password,
@@ -49,7 +49,7 @@ class scaleio_openstack::nova(
     elsif $core_version in ['2015.1.1', '2015.1.2', '2015.1.3']  {
       notify { "Detected nova version ${version} - treat as Kilo": }
 
-      nova_common { 'nova common for Kilo':
+      scaleio_openstack::nova_common { 'nova common for Kilo':
         ensure => $ensure,
         gateway_user => $gateway_user,
         gateway_password => $gateway_password,
@@ -106,7 +106,7 @@ class scaleio_openstack::nova(
     elsif $core_version in ['2014.2.2', '2014.2.4'] {
       notify { "Detected nova version ${version} - treat as Juno": }
 
-      nova_common { 'nova common for Juno':
+      scaleio_openstack::nova_common { 'nova common for Juno':
         ensure => $ensure,
         gateway_user => $gateway_user,
         gateway_password => $gateway_password,
