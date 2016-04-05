@@ -6,6 +6,7 @@ class scaleio_openstack::nova(
   $gateway_port        = 4443,
   $protection_domains  = undef,
   $storage_pools       = undef,
+  $provisioning_type   = 'ThickProvisioned',
   $nova_compute_conf_file_name = 'nova.conf',
 )
 {
@@ -40,6 +41,7 @@ class scaleio_openstack::nova(
         gateway_port => $gateway_port,
         protection_domains => $protection_domains,
         storage_pools => $storage_pools,
+        provisioning_type => $provisioning_type,
         openstack_version => 'liberty',
         siolib_file => 'siolib-1.4.5.tar.gz',
         nova_patch => "${version}.diff",
@@ -59,6 +61,7 @@ class scaleio_openstack::nova(
         gateway_port => $gateway_port,
         protection_domains => $protection_domains,
         storage_pools => $storage_pools,
+        provisioning_type => $provisioning_type,
         openstack_version => 'kilo',
         siolib_file => 'siolib-1.3.5.tar.gz',
         nova_patch => "${version}.diff",
@@ -116,6 +119,7 @@ class scaleio_openstack::nova(
         gateway_port => $gateway_port,
         protection_domains => $protection_domains,
         storage_pools => $storage_pools,
+        provisioning_type => $provisioning_type,
         openstack_version => 'juno',
         siolib_file => 'siolib-1.2.5.tar.gz',
         nova_patch => "${version}.diff",

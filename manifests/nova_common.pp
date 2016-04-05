@@ -6,6 +6,7 @@ define scaleio_openstack::nova_common(
   $gateway_port        = undef,
   $protection_domains  = undef,
   $storage_pools       = undef,
+  $provisioning_type   = undef,
   $openstack_version   = undef,
   $siolib_file         = undef,
   $nova_patch          = undef,
@@ -92,6 +93,11 @@ define scaleio_openstack::nova_common(
     section => 'scaleio',
     setting => 'default_sdcguid',
     value   => $::sdc_guid,
+  } ->
+  ini_setting { 'scaleio_nova_compute_config provisioning_type':
+    section => 'scaleio',
+    setting => 'provisioning_type',
+    value   => $provisioning_type,
   }
 
   Ini_setting {
