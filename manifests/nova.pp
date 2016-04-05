@@ -16,6 +16,8 @@ class scaleio_openstack::nova(
   }
   else {
 
+    #TODO: FUEL7.0 MOS: 2015.1.1-mos19665.diff is the copy of original patch.
+    #      Split logic for juno and kilo and remove duplicated patch file 2015.1.1-mos19665.diff.
     $version_str = split($::nova_version, '-')
     $core_version = $version_str[0]
     $custom_version_str = split($version_str[1], 'mos')
