@@ -9,7 +9,7 @@ class scaleio_openstack::cinder (
   $verify_server_certificate  = 'False',
   $force_delete               = 'True',
   $round_volume_capacity      = 'True',
-  $cinder_config_file         = '/etc/cindef/cinder.conf',  # file where cinder config parameters will be stored
+  $cinder_config_file         = '/etc/cinder/cinder.conf',  # file where cinder config parameters will be stored
   $scaleio_cinder_config_file = '/etc/cinder/cinder_scaleio.config',  # individual config file for versions under liberty
   $default_lvm_backend        = 'lvmdriver',
 )
