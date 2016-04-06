@@ -6,7 +6,7 @@ class scaleio_openstack::nova(
   $gateway_port        = 4443,
   $protection_domains  = undef,
   $storage_pools       = undef,
-  $provisioning_type   = 'ThickProvisioned',
+  $provisioning_type   = 'thick',
   $nova_compute_conf_file_name = 'nova.conf',
 )
 {
@@ -152,4 +152,3 @@ class scaleio_openstack::nova(
 
   # TODO: Disintigrate to separate files for each version
 }
-

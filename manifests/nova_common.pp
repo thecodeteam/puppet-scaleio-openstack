@@ -11,6 +11,7 @@ define scaleio_openstack::nova_common(
   $siolib_file         = undef,
   $nova_patch          = undef,
 ) {
+  $p_type = $provisioning_type ? { 'thin' => 'ThinProvisioned', default => 'ThickProvisioned' }
   file { "/tmp/${siolib_file}":
     source => "puppet:///modules/scaleio_openstack/${openstack_version}/${siolib_file}"
   } ->
@@ -97,7 +98,7 @@ define scaleio_openstack::nova_common(
   ini_setting { 'scaleio_nova_compute_config provisioning_type':
     section => 'scaleio',
     setting => 'provisioning_type',
-    value   => $provisioning_type,
+    value   => $p_type,
   }
 
   Ini_setting {
