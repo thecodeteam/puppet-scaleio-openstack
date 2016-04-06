@@ -247,25 +247,25 @@ class scaleio_openstack::cinder (
     } ->
 
     ini_setting { 'enabled_backends':
-      path    => $cinder_config_file,
+      path    => $scaleio_openstack::cinder::cinder_config_file,
       section => 'DEFAULT',
       setting => 'enabled_backends',
       value   => $scaleio_openstack::cinder::enabled_backends,
     } ->
     ini_setting { 'volume_driver':
-      path    => $cinder_config_file,
+      path    => $scaleio_openstack::cinder::cinder_config_file,
       section => 'scaleio',
       setting => 'volume_driver',
       value   => 'cinder.volume.drivers.emc.scaleio.ScaleIODriver',
     } ->
     ini_setting { 'cinder_scaleio_config_file':
-      path    => $cinder_config_file,
+      path    => $scaleio_openstack::cinder::cinder_config_file,
       section => 'scaleio',
       setting => 'cinder_scaleio_config_file',
       value   => $scaleio_openstack::cinder::scaleio_cinder_config_file,
     } ->
     ini_setting { 'volume_backend_name':
-      path    => $cinder_config_file,
+      path    => $scaleio_openstack::cinder::cinder_config_file,
       section => 'scaleio',
       setting => 'volume_backend_name',
       value   => 'scaleio',
