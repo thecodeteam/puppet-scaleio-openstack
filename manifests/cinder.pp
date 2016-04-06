@@ -17,8 +17,6 @@ class scaleio_openstack::cinder (
   notify {'Configure Cinder to use ScaleIO cluster': }
 
   $services_to_notify = [
-    'cinder-api',
-    'cinder-scheduler',
     'cinder-volume',
   ]
 
