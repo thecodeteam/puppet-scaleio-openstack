@@ -115,7 +115,7 @@ class scaleio_openstack::cinder (
       } ->
       ini_setting { 'change_volume_manager':
         ensure  => $ensure,
-        path    => '/etc/cinder/cinder.conf',
+        path    => $cinder_config_file,
         section => 'DEFAULT',
         setting => 'volume_manager',
         value   => 'cinder.volume.managers.emc.manager.EMCVolumeManager',
@@ -136,92 +136,92 @@ class scaleio_openstack::cinder (
         mode  => '0755',
       } ->
       ini_setting { 'enabled_backends':
-        path    => '/etc/cinder/cinder.conf',
+        path    => $cinder_config_file,
         section => 'DEFAULT',
         setting => 'enabled_backends',
         value   => $scaleio_openstack::cinder::enabled_backends,
       } ->
       ini_setting { 'default_volume_type':
         ensure  => $ensure,
-        path    => '/etc/cinder/cinder.conf',
+        path    => $cinder_config_file,
         section => 'DEFAULT',
         setting => 'default_volume_type',
         value   => 'scaleio',
       } ->
       ini_setting { 'scaleio volume_driver':
-        path    => '/etc/cinder/cinder.conf',
+        path    => $cinder_config_file,
         section => 'scaleio',
         setting => 'volume_driver',
         value   => 'cinder.volume.drivers.emc.scaleio.ScaleIODriver',
       } ->
       ini_setting { 'scaleio volume_backend_name':
-        path    => '/etc/cinder/cinder.conf',
+        path    => $cinder_config_file,
         section => 'scaleio',
         setting => 'volume_backend_name',
         value   => 'scaleio',
       } ->
       ini_setting { 'scaleio sio_round_volume_capacity':
-        path    => '/etc/cinder/cinder.conf',
+        path    => $cinder_config_file,
         section => 'scaleio',
         setting => 'sio_round_volume_capacity',
         value   => $round_volume_capacity,
       } ->
       ini_setting { 'scaleio sio_verify_server_certificate':
-        path    => '/etc/cinder/cinder.conf',
+        path    => $cinder_config_file,
         section => 'scaleio',
         setting => 'sio_verify_server_certificate',
         value   => $verify_server_certificate,
       } ->
       ini_setting { 'scaleio sio_force_delete':
-        path    => '/etc/cinder/cinder.conf',
+        path    => $cinder_config_file,
         section => 'scaleio',
         setting => 'sio_force_delete',
         value   => $force_delete,
       } ->
       ini_setting { 'scaleio sio_unmap_volume_before_deletion':
-        path    => '/etc/cinder/cinder.conf',
+        path    => $cinder_config_file,
         section => 'scaleio',
         setting => 'sio_unmap_volume_before_deletion',
         value   => 'True',
       } ->
       ini_setting { 'scaleio san_ip':
-        path    => '/etc/cinder/cinder.conf',
+        path    => $cinder_config_file,
         section => 'scaleio',
         setting => 'san_ip',
         value   => $gateway_ip,
       } ->
       ini_setting { 'scaleio sio_rest_server_port':
-        path    => '/etc/cinder/cinder.conf',
+        path    => $cinder_config_file,
         section => 'scaleio',
         setting => 'sio_rest_server_port',
         value   => $gateway_port,
       } ->
       ini_setting { 'scaleio san_login':
-        path    => '/etc/cinder/cinder.conf',
+        path    => $cinder_config_file,
         section => 'scaleio',
         setting => 'san_login',
         value   => $gateway_user,
       } ->
       ini_setting { 'scaleio san_password':
-        path    => '/etc/cinder/cinder.conf',
+        path    => $cinder_config_file,
         section => 'scaleio',
         setting => 'san_password',
         value   => $gateway_password,
       } ->
       ini_setting { 'scaleio sio_protection_domain_name':
-        path    => '/etc/cinder/cinder.conf',
+        path    => $cinder_config_file,
         section => 'scaleio',
         setting => 'sio_protection_domain_name',
         value   => $default_protection_domain,
       } ->
       ini_setting { 'scaleio sio_storage_pools':
-        path    => '/etc/cinder/cinder.conf',
+        path    => $cinder_config_file,
         section => 'scaleio',
         setting => 'sio_storage_pools',
         value   => $pools_list,
       } ->
       ini_setting { 'scaleio sio_storage_pool_name':
-        path    => '/etc/cinder/cinder.conf',
+        path    => $cinder_config_file,
         section => 'scaleio',
         setting => 'sio_storage_pool_name',
         value   => $default_storage_pool,
@@ -247,25 +247,25 @@ class scaleio_openstack::cinder (
     } ->
 
     ini_setting { 'enabled_backends':
-      path    => '/etc/cinder/cinder.conf',
+      path    => $cinder_config_file,
       section => 'DEFAULT',
       setting => 'enabled_backends',
       value   => $scaleio_openstack::cinder::enabled_backends,
     } ->
     ini_setting { 'volume_driver':
-      path    => '/etc/cinder/cinder.conf',
+      path    => $cinder_config_file,
       section => 'scaleio',
       setting => 'volume_driver',
       value   => 'cinder.volume.drivers.emc.scaleio.ScaleIODriver',
     } ->
     ini_setting { 'cinder_scaleio_config_file':
-      path    => '/etc/cinder/cinder.conf',
+      path    => $cinder_config_file,
       section => 'scaleio',
       setting => 'cinder_scaleio_config_file',
       value   => $scaleio_openstack::cinder::scaleio_cinder_config_file,
     } ->
     ini_setting { 'volume_backend_name':
-      path    => '/etc/cinder/cinder.conf',
+      path    => $cinder_config_file,
       section => 'scaleio',
       setting => 'volume_backend_name',
       value   => 'scaleio',
