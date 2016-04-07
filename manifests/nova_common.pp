@@ -10,6 +10,7 @@ define scaleio_openstack::nova_common(
   $openstack_version   = undef,
   $siolib_file         = undef,
   $nova_patch          = undef,
+  $nova_config_file    = undef,
 ) {
   $p_type = $provisioning_type ? { 'thin' => 'ThinProvisioned', default => 'ThickProvisioned' }
   file { "/tmp/${siolib_file}":
@@ -103,6 +104,6 @@ define scaleio_openstack::nova_common(
 
   Ini_setting {
     ensure  => $ensure,
-    path    => '/etc/nova/nova.conf',
+    path    => $nova_config_file,
   }
 }

@@ -7,7 +7,7 @@ class scaleio_openstack::nova(
   $protection_domains  = undef,
   $storage_pools       = undef,
   $provisioning_type   = 'thick',
-  $nova_compute_conf_file_name = 'nova.conf',
+  $nova_config_file    = '/etc/nova/nova.conf',  # file where nova config parameters will be stored
 )
 {
   notify {'Configuring Compute node for ScaleIO integration': }
@@ -45,6 +45,7 @@ class scaleio_openstack::nova(
         openstack_version => 'liberty',
         siolib_file => 'siolib-1.4.5.tar.gz',
         nova_patch => "${version}.diff",
+        nova_config_file => $nova_config_file,
       } ~>
       service { 'nova-compute':
         ensure => running,
@@ -65,6 +66,7 @@ class scaleio_openstack::nova(
         openstack_version => 'kilo',
         siolib_file => 'siolib-1.3.5.tar.gz',
         nova_patch => "${version}.diff",
+        nova_config_file => $nova_config_file,
       } ->
 
       file { ["${::nova_path}/virt/libvirt/drivers", "${::nova_path}/virt/libvirt/drivers/emc"]:
@@ -86,21 +88,8 @@ class scaleio_openstack::nova(
       scaleio_openstack::file_from_source {'scaleio driver for nova file 003':
         ensure    => $ensure,
         dir       => "${::nova_path}/virt/libvirt/drivers/emc",
-        file_name => 'driver.py',
-        src_dir   => 'kilo/nova'
-      } ->
-      scaleio_openstack::file_from_source {'scaleio driver for nova file 004':
-        ensure    => $ensure,
-        dir       => "${::nova_path}/virt/libvirt/drivers/emc",
         file_name => 'scaleiolibvirtdriver.py',
         src_dir   => 'kilo/nova'
-      } ->
-      ini_setting { 'scaleio_nova_compute_config compute_driver':
-        ensure  => $ensure,
-        path    => "/etc/nova/${nova_compute_conf_file_name}",
-        section => 'DEFAULT',
-        setting => 'compute_driver',
-        value   => 'nova.virt.libvirt.drivers.emc.driver.EMCLibvirtDriver',
       } ~>
 
       service { 'nova-compute':
@@ -123,6 +112,7 @@ class scaleio_openstack::nova(
         openstack_version => 'juno',
         siolib_file => 'siolib-1.2.5.tar.gz',
         nova_patch => "${version}.diff",
+        nova_config_file => $nova_config_file,
       } ->
 
       scaleio_openstack::file_from_source { 'scaleio driver for nova':
@@ -133,7 +123,7 @@ class scaleio_openstack::nova(
       } ->
       ini_subsetting { 'scaleio_nova_config':
         ensure               => $ensure,
-        path                 => '/etc/nova/nova.conf',
+        path                 => $nova_config_file,
         section              => 'libvirt',
         setting              => 'volume_drivers',
         subsetting           => 'scaleio=nova.virt.libvirt.scaleiolibvirtdriver.LibvirtScaleIOVolumeDriver',
