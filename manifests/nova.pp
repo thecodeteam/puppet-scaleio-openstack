@@ -17,6 +17,15 @@ class scaleio_openstack::nova(
   }
   else {
 
+    service { 'nova-compute':
+      ensure => running,
+    }
+    Ini_setting <| |> -> Service['nova-compute']
+    Ini_subsetting <| |> -> Service['nova-compute']
+    File <| |> -> Service['nova-compute']
+    File_from_source <| |> -> Service['nova-compute']
+    Scaleio_openstack::nova_common <| |> -> Service['nova-compute']
+
     #TODO: FUEL7.0 MOS: 2015.1.1-mos19665.diff is the copy of original patch.
     #      Split logic for juno and kilo and remove duplicated patch file 2015.1.1-mos19665.diff.
     $version_str = split($::nova_version, '-')
@@ -29,6 +38,7 @@ class scaleio_openstack::nova(
     else {
       $version = $core_version
     }
+
     notify { "Detected nova version: ${version}": }
     if $core_version in ['12.0.1', '12.0.2'] {
       notify { "Detected nova version ${version} - treat as Liberty": }
@@ -46,9 +56,6 @@ class scaleio_openstack::nova(
         siolib_file => 'siolib-1.4.5.tar.gz',
         nova_patch => "${version}.diff",
         nova_config_file => $nova_config_file,
-      } ~>
-      service { 'nova-compute':
-        ensure => running,
       }
     }
     elsif $core_version in ['2015.1.1', '2015.1.2', '2015.1.3']  {
@@ -90,12 +97,7 @@ class scaleio_openstack::nova(
         dir       => "${::nova_path}/virt/libvirt/drivers/emc",
         file_name => 'scaleiolibvirtdriver.py',
         src_dir   => 'kilo/nova'
-      } ~>
-
-      service { 'nova-compute':
-        ensure => running,
       }
-
     }
     elsif $core_version in ['2014.2.2', '2014.2.4'] {
       notify { "Detected nova version ${version} - treat as Juno": }
@@ -128,12 +130,7 @@ class scaleio_openstack::nova(
         setting              => 'volume_drivers',
         subsetting           => 'scaleio=nova.virt.libvirt.scaleiolibvirtdriver.LibvirtScaleIOVolumeDriver',
         subsetting_separator => ',',
-      } ~>
-
-      service { 'nova-compute':
-        ensure => running,
       }
-
     }
     else {
       fail("Version ${::nova_version} isn't supported.")

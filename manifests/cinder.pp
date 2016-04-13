@@ -16,10 +16,6 @@ class scaleio_openstack::cinder (
 {
   notify {'Configure Cinder to use ScaleIO cluster': }
 
-  $services_to_notify = [
-    'cinder-volume',
-  ]
-
   if ! $::cinder_path {
     warning('Cinder is not installed on this node')
   }
@@ -34,6 +30,13 @@ class scaleio_openstack::cinder (
     $version_str = split($::cinder_version, '-')
     $version = $version_str[0]
     $version_array = split($version, '\.')
+
+    service { 'cinder-volume':
+      ensure => running
+    }
+    Ini_setting <| |> -> Service['cinder-volume']
+    File <| |> -> Service['cinder-volume']
+    File_from_source <| |> -> Service['cinder-volume']
 
     if $version_array[0] == '2014' and $version_array[1] == '2' {
       notify { "Detected cinder version $version - treat as Juno": }
@@ -51,10 +54,7 @@ class scaleio_openstack::cinder (
         src_dir   => 'juno/cinder'
       } ->
 
-      patch_common { 'patch juno cinder conf': } ~>
-      service { $services_to_notify:
-        ensure => running,
-      }
+      patch_common { 'patch juno cinder conf': }
     }
     elsif $version_array[0] == '2015' and $version_array[1] == '1' {
       notify { "Detected cinder version $version - treat as Kilo": }
@@ -119,10 +119,7 @@ class scaleio_openstack::cinder (
         value   => 'cinder.volume.managers.emc.manager.EMCVolumeManager',
       } ->
 
-      patch_common { 'patch kilo cinder': } ~>
-      service { $services_to_notify:
-        ensure => running,
-      }
+      patch_common { 'patch kilo cinder conf': }
     }
     elsif $version_array[0] == '7' or $version_array[0] == '8' {
       notify { "Detected cinder version $version - treat as Liberty": }
@@ -223,10 +220,6 @@ class scaleio_openstack::cinder (
         section => 'scaleio',
         setting => 'sio_storage_pool_name',
         value   => $default_storage_pool,
-      } ~>
-
-      service { $services_to_notify:
-        ensure => running,
       }
     }
     else {
@@ -241,7 +234,8 @@ class scaleio_openstack::cinder (
     } ->
     scaleio_openstack::scaleio_filter_file { 'cinder filter file':
       ensure  => $scaleio_openstack::cinder::ensure,
-      service => 'cinder'
+      service => 'cinder',
+      notify  => Service['cinder-volume']
     } ->
 
     ini_setting { 'enabled_backends':
