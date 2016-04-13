@@ -34,9 +34,9 @@ class scaleio_openstack::cinder (
     service { 'cinder-volume':
       ensure => running
     }
-    Ini_setting <| |> -> Service['cinder-volume']
-    File <| |> -> Service['cinder-volume']
-    File_from_source <| |> -> Service['cinder-volume']
+    Ini_setting <| |> ~> Service['cinder-volume']
+    File <| |> ~> Service['cinder-volume']
+    File_from_source <| |> ~> Service['cinder-volume']
 
     if $version_array[0] == '2014' and $version_array[1] == '2' {
       notify { "Detected cinder version $version - treat as Juno": }

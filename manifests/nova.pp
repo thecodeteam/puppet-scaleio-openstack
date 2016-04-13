@@ -20,11 +20,11 @@ class scaleio_openstack::nova(
     service { 'nova-compute':
       ensure => running,
     }
-    Ini_setting <| |> -> Service['nova-compute']
-    Ini_subsetting <| |> -> Service['nova-compute']
-    File <| |> -> Service['nova-compute']
-    File_from_source <| |> -> Service['nova-compute']
-    Scaleio_openstack::nova_common <| |> -> Service['nova-compute']
+    Ini_setting <| |> ~> Service['nova-compute']
+    Ini_subsetting <| |> ~> Service['nova-compute']
+    File <| |> ~> Service['nova-compute']
+    File_from_source <| |> ~> Service['nova-compute']
+    Nova_common <| |> ~> Service['nova-compute']
 
     #TODO: FUEL7.0 MOS: 2015.1.1-mos19665.diff is the copy of original patch.
     #      Split logic for juno and kilo and remove duplicated patch file 2015.1.1-mos19665.diff.
