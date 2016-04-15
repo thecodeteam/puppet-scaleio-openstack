@@ -15,9 +15,10 @@ should be created in OpenStack.
 ### What Puppet-ScaleIO affects
 
 * Adds rootwrap filters
-* Modifies nova.conf and nova-compute.conf
+* Modifies nova.conf
 * Patches nova python files
 * Modifies cinder.conf
+* Adds cinder_scaleio.config for Juno and Kilo versions
 * Patches cinder python files
 
 ### Tested with
@@ -25,7 +26,7 @@ should be created in OpenStack.
 * Puppet 3.7.2+
 * ScaleIO 2.0
 * Ubuntu 14.04
-* Linux kernel 4.2.0-30-generic
+* Linux kernel 4.2.0-30-generic and 3.13.0-85-generic
 * OpenStack Juno, Kilo, Liberty
 
 ### Setup Requirements
