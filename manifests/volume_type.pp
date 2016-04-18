@@ -1,47 +1,66 @@
 # Define for creation of volume types for ScaleIO
 #
 define scaleio_openstack::volume_type(
-  $ensure           = present,  #
-  $name,                        # name of volume type to be created
-  $protection_domain,           # name of protection domain to tie with volume type
-  $storage_pool,                # name of storage pool to tie with volume type
-  $os_user          = undef,    # OpenStack user name
-  $os_password      = undef,    # OpenStack user password
-  $os_tenant        = undef,    # OpenStack tenant name
-  $os_auth_url      = undef,    # OpenStack auth URL
-  $env_file         = undef,    # environment file with all OS required parameters,
-                                # use either this option or os_xx parameters 
+  $ensure             = present,  #
+  $name,                          # name of volume type to be created
+  $protection_domain  = undef,    # name of protection domain to tie with volume type
+  $storage_pool       = undef,    # name of storage pool to tie with volume type
+  $provisioning       = 'thin',   # type of provisioning, 'thin' / 'thick' 
 ) {
-  $source_opts = $env_file ? {
-    undef     => '',
-    default   => "source ${env_file} ; "
+  $os_username = $::cinder_username ? {
+    undef   => [],
+    default => ["OS_USERNAME=${::cinder_username}"]
   }
-  if $os_user and $os_password and $os_tenant and $os_auth_url {
-    Exec {
-      environment => [
-        "OS_USERNAME=${os_user}",
-        "OS_PASSWORD=${os_password}",
-        "OS_AUTH_URL=${os_auth_url}",
-        "OS_TENANT_NAME=${os_tenant}",
-      ]
-    }
-  }  
+  $os_password = $::cinder_password ? {
+    undef   => [],
+    default => ["OS_PASSWORD=${::cinder_password}"]
+  }
+  $os_tenant_name = $::cinder_tenant_name ? {
+    undef   => [],
+    default => ["OS_TENANT_NAME=${::cinder_tenant_name}"]
+  }
+  $os_auth_uri = $::cinder_auth_uri ? {
+    undef   => [],
+    default => ["OS_AUTH_URL=${::cinder_auth_uri}"]
+  }
+  $environment = concat($os_username, concat($os_password, concat($os_tenant_name, $os_auth_uri)))
+  Exec {
+    environment => $environment
+  }
+  $check_cmd = "cinder type-list | grep -q '${name}'"
+  $volume_type_ensure_name = "ScaleIO Cinder Volume Type ${name} ${ensure}"
   if $ensure == present {
-    exec {"ScaleIO Cinder Volume Type ${name} ${ensure}, pd: ${protection_domain}, sp: ${storage_pool}":
-      command     => "bash -c '${source_opts} cinder type-create ${name}'",
+    exec {$volume_type_ensure_name:
+      command     => "cinder type-create ${name}",
       path        => ['/usr/bin', '/bin'],
-      unless      => "bash -c '${source_opts} cinder type-list | grep -q \"${name}\"'",
-    } ->
-    exec {"Properties for ScaleIO Cinder Volume Type ${name}, pd: ${protection_domain}, sp: ${storage_pool}":
-      command => "bash -c '${source_opts} cinder type-key ${name} set sio:pd_name=${protection_domain} sio:provisioning=thin sio:sp_name=${storage_pool}'",
-      path    => ['/usr/bin', '/bin'],
-      onlyif  => "bash -c '${source_opts} cinder type-list | grep -q \"${name}\"'",
-    }    
+      unless      => $check_cmd,
+    }
+    $pd_opts = $protection_domain ? {
+      undef   => '',
+      default => "sio:pd_name=${protection_domain}"
+    }
+    $sp_opts = $storage_pool ? {
+      undef   => '',
+      default => "sio:sp_name=${storage_pool}"
+    }
+    $provisioning_opts = $provisioning ? {
+      undef   => '',
+      default => "sio:provisioning=${provisioning}"
+    }
+    $volume_type_opts = "${pd_opts} ${sp_opts} ${provisioning_opts}"
+    if $volume_type_opts != '  ' {
+      exec {"ScaleIO Cinder Volume Type ${name} Options ${volume_type_opts}":
+        command => "cinder type-key '${name}' set ${volume_type_opts}",
+        path    => ['/usr/bin', '/bin'],
+        onlyif  => $check_cmd,
+        require => Exec[$volume_type_ensure_name],
+      }
+    }
   } else {
-    exec {"ScaleIO Cinder Volume Type ${name} ${ensure}":
-      command     => "bash -c '${source_opts} cinder type-delete ${name}'",
+    exec {$volume_type_ensure_name:
+      command     => "cinder type-delete '${name}'",
       path        => ['/usr/bin', '/bin'],
-      onlyif      => "bash -c '${source_opts} cinder type-list | grep -q \"${name}\"'",
+      onlyif      => $check_cmd,
     }
   }
 }
