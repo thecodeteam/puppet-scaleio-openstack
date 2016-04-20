@@ -80,5 +80,4 @@ Files:
 
 ## Contact information
 
-- [Project Homepage](https://launchpad.net/puppet-scaleio-openstack)
-- [Project Bug Tracker](https://bugs.launchpad.net/puppet-scaleio-openstack)
+- [Project Bug Tracker](https://github.com/cloudscaling/puppet-scaleio-openstack/issues)
