@@ -77,3 +77,8 @@ Files:
     ensure => present,
   }
   ```
+
+## Contact information
+
+- [Project Homepage](https://launchpad.net/puppet-scaleio-openstack)
+- [Project Bug Tracker](https://bugs.launchpad.net/puppet-scaleio-openstack)
