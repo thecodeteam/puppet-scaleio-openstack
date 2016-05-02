@@ -7,7 +7,7 @@ class scaleio_openstack::cinder (
   $protection_domains         = undef,
   $storage_pools              = undef,
   $verify_server_certificate  = 'False',
-  $force_delete               = 'True',
+  $server_certificate_path    = undef,
   $round_volume_capacity      = 'True',
   $cinder_config_file         = '/etc/cinder/cinder.conf',  # file where cinder config parameters will be stored
   $scaleio_cinder_config_file = '/etc/cinder/cinder_scaleio.config',  # individual config file for versions under liberty
@@ -167,11 +167,11 @@ class scaleio_openstack::cinder (
         setting => 'sio_verify_server_certificate',
         value   => $verify_server_certificate,
       } ->
-      ini_setting { 'scaleio sio_force_delete':
+      ini_setting { 'scaleio sio_server_certificate_path':
         path    => $cinder_config_file,
         section => 'scaleio',
-        setting => 'sio_force_delete',
-        value   => $force_delete,
+        setting => 'sio_server_certificate_path',
+        value   => $server_certificate_path,
       } ->
       ini_setting { 'scaleio sio_unmap_volume_before_deletion':
         path    => $cinder_config_file,
