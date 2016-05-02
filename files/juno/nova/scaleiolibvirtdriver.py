@@ -1,4 +1,3 @@
-
 # Copyright (c) 2013 EMC Corporation
 # All Rights Reserved
 
@@ -7,7 +6,6 @@
 # software and the intellectual property contained therein is expressly
 # limited to the terms and conditions of the License Agreement under which
 # it is provided by or on behalf of EMC.
-
 
 import glob
 import hashlib
@@ -96,13 +94,11 @@ class LibvirtScaleIOVolumeDriver(LibvirtBaseVolumeDriver):
     pattern3 = None
 
     def __init__(self, connection):
-        """Create back-end to nfs."""
-        LOG.warning("ScaleIO libvirt volume driver INIT")
+        LOG.debug("ScaleIO libvirt volume driver INIT")
         super(LibvirtScaleIOVolumeDriver,
               self).__init__(connection, is_block_dev=False)
 
     def find_volume_path(self, volume_id):
-
         LOG.info("looking for volume %s" % volume_id)
         # look for the volume in /dev/disk/by-id directory
         disk_filename = ""
@@ -123,13 +119,9 @@ class LibvirtScaleIOVolumeDriver(LibvirtBaseVolumeDriver):
                 time.sleep(1)
                 continue
             filenames = os.listdir(by_id_path)
-            LOG.warning(
-                "Files found in {0} path: {1} ".format(
-                    by_id_path,
-                    filenames))
+            LOG.info("Files found in {0} path: {1} ".format(by_id_path, filenames))
             for filename in filenames:
-                if (filename.startswith("emc-vol") and
-                        filename.endswith(volume_id)):
+                if (filename.startswith("emc-vol") and filename.endswith(volume_id)):
                     disk_filename = filename
             if not disk_filename:
                 LOG.warn(
@@ -141,77 +133,27 @@ class LibvirtScaleIOVolumeDriver(LibvirtBaseVolumeDriver):
                 time.sleep(1)
 
         if (tries != 0):
-            LOG.warning(
+            LOG.info(
                 "Found scaleIO device {0} after {1} retries ".format(
                     disk_filename,
                     tries))
         full_disk_name = by_id_path + "/" + disk_filename
-        LOG.warning("Full disk name is " + full_disk_name)
+        LOG.info("Full disk name is " + full_disk_name)
         return full_disk_name
-#         path = os.path.realpath(full_disk_name)
-#         LOG.warning("Path is " + path)
-#         return path
-
-    def _get_client_id(self, server_ip, server_port,
-                       server_username, server_password, server_token, sdc_ip):
-        request = "https://" + server_ip + ":" + server_port + \
-            "/api/types/Client/instances/getByIp::" + sdc_ip + "/"
-        LOG.info("ScaleIO get client id by ip request: %s" % request)
-        r = requests.get(
-            request,
-            auth=(
-                server_username,
-                server_token),
-            verify=False)
-        r = self._check_response(
-            r,
-            request,
-            server_ip,
-            server_port,
-            server_username,
-            server_password,
-            server_token)
-
-        sdc_id = r.json()
-        if (sdc_id == '' or sdc_id is None):
-            msg = ("Client with ip %s wasn't found " % (sdc_ip))
-            LOG.error(msg)
-            raise exception.NovaException(data=msg)
-        if (r.status_code != 200 and "errorCode" in sdc_id):
-            msg = (
-                "Error getting sdc id from ip %s: %s " %
-                (sdc_ip, sdc_id['message']))
-            LOG.error(msg)
-            raise exception.NovaException(data=msg)
-        LOG.info("ScaleIO sdc id is %s" % sdc_id)
-        return sdc_id
 
     def _get_volume_id(self, server_ip, server_port,
                        server_username, server_password,
                        server_token, volname):
         volname_encoded = urllib.quote(volname, '')
         volname_double_encoded = urllib.quote(volname_encoded, '')
-#         volname = volname.replace('/', '%252F')
         LOG.info(
-            "volume name after double encoding is %s " %
-            volname_double_encoded)
+            "volume name after double encoding is %s " % volname_double_encoded)
         request = "https://" + server_ip + ":" + server_port + \
             "/api/types/Volume/instances/getByName::" + volname_double_encoded
         LOG.info("ScaleIO get volume id by name request: %s" % request)
-        r = requests.get(
-            request,
-            auth=(
-                server_username,
-                server_token),
-            verify=False)
-        r = self._check_response(
-            r,
-            request,
-            server_ip,
-            server_port,
-            server_username,
-            server_password,
-            server_token)
+        r = requests.get( request, auth=(server_username, server_token), verify=False)
+        r = self._check_response(r, request, server_ip, server_port,
+                                 server_username, server_password, server_token)
 
         volume_id = r.json()
         if (volume_id == '' or volume_id is None):
@@ -230,40 +172,28 @@ class LibvirtScaleIOVolumeDriver(LibvirtBaseVolumeDriver):
     def _check_response(self, response, request, server_ip,
                         server_port, server_username,
                         server_password, server_token, isGetRequest=True, params=None):
-        if (response.status_code == 401 or response.status_code == 403):
-            LOG.info("Token is invalid, going to re-login and get a new one")
-            login_request = "https://" + server_ip + \
-                ":" + server_port + "/api/login"
-            r = requests.get(
-                login_request,
-                auth=(
-                    server_username,
-                    server_password),
-                verify=False)
-            token = r.json()
-            # repeat request with valid token
-            LOG.debug(
-                "going to perform request again {0} \
-                with valid token".format(request))
-            if isGetRequest:
-                res = requests.get(
-                                   request,
-                                   auth=(
-                                         server_username,
-                                         token),
-                                   verify=False)
-            else:
-                headers = {'content-type': 'application/json'}
-                res = requests.post(
-                                  request,
-                                  data=json.dumps(params),
-                                  headers=headers,
-                                  auth=(
-                                        server_username,
-                                        token),
-                                  verify=False)
-            return res
-        return response
+        if (response.status_code != 401 and response.status_code != 403):
+            return response
+
+        LOG.info("Token is invalid, going to re-login and get a new one")
+        login_request = "https://" + server_ip + \
+            ":" + server_port + "/api/login"
+        r = requests.get(
+            login_request,
+            auth=(server_username, server_password),
+            verify=False)
+        token = r.json()
+        # repeat request with valid token
+        LOG.debug(
+            "going to perform request again {0} \
+            with valid token".format(request))
+        if isGetRequest:
+            res = requests.get(request, auth=(server_username, token), verify=False)
+        else:
+            headers = {'content-type': 'application/json'}
+            res = requests.post(request, data=json.dumps(params), headers=headers,
+                                auth=(server_username, token), verify=False)
+        return res
 
     def connect_volume(self, connection_info, disk_info):
         """Connect the volume. Returns xml for libvirt."""
@@ -274,8 +204,6 @@ class LibvirtScaleIOVolumeDriver(LibvirtBaseVolumeDriver):
         data = connection_info
         LOG.info("scaleIO connect to stuff " + str(data))
         data = connection_info['data']
-#         LOG.info("scaleIO connect to joined "+str(data))
-#         LOG.info("scaleIO Dsk info "+str(disk_info))
         volname = connection_info['data']['scaleIO_volname']
         # sdc ip here is wrong, probably not retrieved properly in cinder
         # driver. Currently not used.
@@ -291,22 +219,12 @@ class LibvirtScaleIOVolumeDriver(LibvirtBaseVolumeDriver):
             "scaleIO Volume name: {0}, SDC IP: {1}, REST Server IP: {2}, \
             REST Server username: {3}, REST Server password: {4}, iops limit: \
             {5}, bandwidth limit: {6}".format(
-                volname,
-                sdc_ip,
-                server_ip,
-                server_username,
-                server_password,
-                iops_limit,
-                bandwidth_limit))
-
-        cmd = ['drv_cfg']
-        cmd += ["--query_guid"]
-
-        LOG.info("ScaleIO sdc query guid command: " + str(cmd))
+                volname sdc_ip, server_ip, server_username, server_password,
+                iops_limit, bandwidth_limit))
 
         try:
+            cmd = ['drv_cfg', "--query_guid"]
             (out, err) = utils.execute(*cmd, run_as_root=True)
-            LOG.info("map volume %s: stdout=%s stderr=%s" % (cmd, out, err))
         except processutils.ProcessExecutionError as e:
             msg = ("Error querying sdc guid: %s" % (e.stderr))
             LOG.error(msg)
@@ -316,43 +234,20 @@ class LibvirtScaleIOVolumeDriver(LibvirtBaseVolumeDriver):
         msg = ("Current sdc guid: %s" % (guid))
         LOG.info(msg)
 
-#         sdc_id = self._get_client_id(server_ip, server_port, \
-#         server_username, server_password, server_token, sdc_ip)
-
-#         params = {'sdcId' : sdc_id}
-
         params = {'guid': guid, 'allowMultipleMappings': 'TRUE'}
-
         volume_id = self._get_volume_id(
-            server_ip,
-            server_port,
-            server_username,
-            server_password,
-            server_token,
-            volname)
+            server_ip, server_port, server_username, server_password,
+            server_token, volname)
         headers = {'content-type': 'application/json'}
         request = "https://" + server_ip + ":" + server_port + \
             "/api/instances/Volume::" + str(volume_id) + "/action/addMappedSdc"
         LOG.info("map volume request: %s" % request)
         r = requests.post(
-            request,
-            data=json.dumps(params),
-            headers=headers,
-            auth=(
-                server_username,
-                server_token),
-            verify=False)
+            request,  data=json.dumps(params), headers=headers,
+            auth=(server_username, server_token), verify=False)
         r = self._check_response(
-            r,
-            request,
-            server_ip,
-            server_port,
-            server_username,
-            server_password,
-            server_token,
-            False,
-            params)
-#         LOG.info("map volume response: %s" % r.text)
+            r, request, server_ip, server_port, server_username,
+            server_password, server_token, False, params)
 
         if (r.status_code != OK_STATUS_CODE):
             response = r.json()
@@ -369,10 +264,6 @@ class LibvirtScaleIOVolumeDriver(LibvirtBaseVolumeDriver):
                 LOG.error(msg)
                 raise exception.NovaException(data=msg)
 
-#       convert id to hex
-#         val = int(volume_id)
-#         id_in_hex = hex((val + (1 << 64)) % (1 << 64))
-#         formated_id = id_in_hex.rstrip("L").lstrip("0x") or "0"
         formated_id = volume_id
 
         conf.source_path = self.find_volume_path(formated_id)
@@ -391,23 +282,11 @@ class LibvirtScaleIOVolumeDriver(LibvirtBaseVolumeDriver):
                 str(volume_id) + "/action/setMappedSdcLimits"
             LOG.info("set client limit request: %s" % request)
             r = requests.post(
-                request,
-                data=json.dumps(params),
-                headers=headers,
-                auth=(
-                    server_username,
-                    server_token),
-                verify=False)
+                request, data=json.dumps(params), headers=headers,
+                auth=(server_username, server_token), verify=False)
             r = self._check_response(
-                r,
-                request,
-                server_ip,
-                server_port,
-                server_username,
-                server_password,
-                server_token,
-                False,
-                params)
+                r, request, server_ip, server_port, server_username,
+                server_password, server_token, False, params)
             if (r.status_code != OK_STATUS_CODE):
                 response = r.json()
                 LOG.info("set client limit response: %s" % response)
@@ -431,20 +310,12 @@ class LibvirtScaleIOVolumeDriver(LibvirtBaseVolumeDriver):
         server_password = connection_info['data']['serverPassword']
         server_token = connection_info['data']['serverToken']
         LOG.debug(
-            "scaleIO Volume name: {0}, SDC IP: {1}, REST Server IP: \
-            {2}".format(
-                volname,
-                sdc_ip,
-                server_ip))
-
-        cmd = ['drv_cfg']
-        cmd += ["--query_guid"]
-
-        LOG.info("ScaleIO sdc query guid command: " + str(cmd))
+            "scaleIO Volume name: {0}, SDC IP: {1}, REST Server IP: {2}".format(
+                volname, sdc_ip, server_ip))
 
         try:
+            cmd = ['drv_cfg']
             (out, err) = utils.execute(*cmd, run_as_root=True)
-            LOG.info("map volume %s: stdout=%s stderr=%s" % (cmd, out, err))
         except processutils.ProcessExecutionError as e:
             msg = ("Error querying sdc guid: %s" % (e.stderr))
             LOG.error(msg)
@@ -455,38 +326,19 @@ class LibvirtScaleIOVolumeDriver(LibvirtBaseVolumeDriver):
         LOG.info(msg)
 
         params = {'guid': guid}
-
         headers = {'content-type': 'application/json'}
-
         volume_id = self._get_volume_id(
-            server_ip,
-            server_port,
-            server_username,
-            server_password,
-            server_token,
-            volname)
+            server_ip, server_port, server_username, server_password,
+            server_token, volname)
         request = "https://" + server_ip + ":" + server_port + \
             "/api/instances/Volume::" + \
             str(volume_id) + "/action/removeMappedSdc"
         LOG.info("unmap volume request: %s" % request)
-        r = requests.post(
-            request,
-            data=json.dumps(params),
-            headers=headers,
-            auth=(
-                server_username,
-                server_token),
-            verify=False)
+        r = requests.post(request, data=json.dumps(params), headers=headers,
+            auth=(server_username, server_token), verify=False)
         r = self._check_response(
-            r,
-            request,
-            server_ip,
-            server_port,
-            server_username,
-            server_password,
-            server_token,
-            False,
-            params)
+            r, request, server_ip, server_port, server_username, server_password,
+            server_token, False, params)
 
         if (r.status_code != OK_STATUS_CODE):
             response = r.json()
@@ -502,3 +354,4 @@ class LibvirtScaleIOVolumeDriver(LibvirtBaseVolumeDriver):
                     (volname, response['message']))
                 LOG.error(msg)
                 raise exception.NovaException(data=msg)
+
