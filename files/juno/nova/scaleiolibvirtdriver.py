@@ -219,7 +219,7 @@ class LibvirtScaleIOVolumeDriver(LibvirtBaseVolumeDriver):
             "scaleIO Volume name: {0}, SDC IP: {1}, REST Server IP: {2}, \
             REST Server username: {3}, REST Server password: {4}, iops limit: \
             {5}, bandwidth limit: {6}".format(
-                volname sdc_ip, server_ip, server_username, server_password,
+                volname, sdc_ip, server_ip, server_username, server_password,
                 iops_limit, bandwidth_limit))
 
         try:
