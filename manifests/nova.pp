@@ -26,13 +26,18 @@ class scaleio_openstack::nova(
     File_from_source <| |> ~> Service['nova-compute']
     Nova_common <| |> ~> Service['nova-compute']
 
-    #TODO: FUEL7.0 MOS: 2015.1.1-mos19665.diff is the copy of original patch.
-    #      Split logic for juno and kilo and remove duplicated patch file 2015.1.1-mos19665.diff.
+    # Array of custom MOS versions, if a version is not in the array default patch will be applied,
+    # in case of new custom mos patch it is needed to add its version into this table.
+    $custom_mos_versions = ['30', '46']
     $version_str = split($::nova_version, '-')
     $core_version = $version_str[0]
     $custom_version_str = split($version_str[1], 'mos')
-    $custom_version = $custom_version_str[1]
-    if $custom_version != '' {
+    if count($custom_version_str) > 1 and $custom_version_str[1] in $custom_mos_versions {
+      $custom_version = $custom_version_str[1]
+    } else {
+      $custom_version = ''
+    }
+    if $custom_version and $custom_version != '' {
       $version = "${core_version}-mos${custom_version}"
     }
     else {
@@ -40,7 +45,7 @@ class scaleio_openstack::nova(
     }
 
     notify { "Detected nova version: ${version}": }
-    if $core_version in ['12.0.1', '12.0.2'] {
+    if $core_version in ['12.0.0', '12.0.1', '12.0.2'] {
       notify { "Detected nova version ${version} - treat as Liberty": }
 
       scaleio_openstack::nova_common { 'nova common for Liberty':
