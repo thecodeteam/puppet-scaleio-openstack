@@ -66,7 +66,7 @@ class scaleio_openstack::nova(
         nova_config_file => $nova_config_file,
       }
     }
-    elsif $core_version in ['2015.1.1', '2015.1.2', '2015.1.3']  {
+    elsif $core_version in ['2015.1.1', '2015.1.2', '2015.1.3', '2015.1.4']  {
       notify { "Detected nova version ${version} - treat as Kilo": }
 
       scaleio_openstack::nova_common { 'nova common for Kilo':
