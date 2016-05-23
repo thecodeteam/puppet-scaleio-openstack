@@ -51,7 +51,7 @@ define scaleio_openstack::flavor(
     undef     => '',
     default   => "--rxtx-factor ${rxtx_factor}"
   }
-  $is_public_opts = $rxtx_factor ? {
+  $is_public_opts = $is_public ? {
     undef     => '',
     default   => "--is-public ${is_public}"
   }
