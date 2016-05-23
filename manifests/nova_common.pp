@@ -12,6 +12,11 @@ define scaleio_openstack::nova_common(
   $nova_patch          = undef,
   $nova_config_file    = undef,
 ) {
+  $domains = split($protection_domains,',')
+  $pools = split($storage_pools,',')
+  $default_protection_domain = $domains[0]
+  $default_storage_pool = $pools[0]
+
   $p_type = $provisioning_type ? { 'thin' => 'ThinProvisioned', default => 'ThickProvisioned' }
   file { "/tmp/${siolib_file}":
     source => "puppet:///modules/scaleio_openstack/${openstack_version}/${siolib_file}"
@@ -81,15 +86,13 @@ define scaleio_openstack::nova_common(
   } ->
   ini_setting { 'scaleio_nova_compute_config protection_domain_name':
     section => 'scaleio',
-    # TODO: domain or domains?
     setting => 'protection_domain_name',
-    value   => $protection_domains,
+    value   => $default_protection_domain,
   } ->
   ini_setting { 'scaleio_nova_compute_config storage_pool_name':
     section => 'scaleio',
-    # TODO: pool or pools?
     setting => 'storage_pool_name',
-    value   => $storage_pools,
+    value   => $default_storage_pool,
   } ->
   ini_setting { 'scaleio_nova_compute_config default_sdcguid':
     section => 'scaleio',
