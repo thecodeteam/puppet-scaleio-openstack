@@ -5,7 +5,7 @@ define scaleio_openstack::volume_type(
   $name,                          # name of volume type to be created
   $protection_domain  = undef,    # name of protection domain to tie with volume type
   $storage_pool       = undef,    # name of storage pool to tie with volume type
-  $provisioning       = 'thin',   # type of provisioning, 'thin' / 'thick' 
+  $provisioning       = 'thick',  # type of provisioning, 'thin' / 'thick' 
 ) {
   $os_username = $::cinder_username ? {
     undef   => [],
