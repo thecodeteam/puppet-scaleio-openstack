@@ -1,5 +1,5 @@
 {
-  "version": "0.3.11",
+  "version": "0.3.12",
   "author": "Alexey Morlang, EMC",
   "name": "cloudscaling-scaleio_openstack",
   "summary": "Puppet library for configuration of Openstack to use Scaleio 2.0 cluster",
