@@ -223,7 +223,7 @@ class LibvirtScaleIOVolumeDriver(LibvirtBaseVolumeDriver):
                 iops_limit, bandwidth_limit))
 
         try:
-            cmd = ['drv_cfg', "--query_guid"]
+            cmd = ['drv_cfg', '--query_guid']
             (out, err) = utils.execute(*cmd, run_as_root=True)
         except processutils.ProcessExecutionError as e:
             msg = ("Error querying sdc guid: %s" % (e.stderr))
@@ -314,7 +314,7 @@ class LibvirtScaleIOVolumeDriver(LibvirtBaseVolumeDriver):
                 volname, sdc_ip, server_ip))
 
         try:
-            cmd = ['drv_cfg']
+            cmd = ['drv_cfg', '--query_guid']
             (out, err) = utils.execute(*cmd, run_as_root=True)
         except processutils.ProcessExecutionError as e:
             msg = ("Error querying sdc guid: %s" % (e.stderr))
