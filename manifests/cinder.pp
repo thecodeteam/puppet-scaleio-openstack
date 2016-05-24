@@ -12,7 +12,6 @@ class scaleio_openstack::cinder (
   $cinder_config_file         = '/etc/cinder/cinder.conf',  # file where cinder config parameters will be stored
   $scaleio_cinder_config_file = '/etc/cinder/cinder_scaleio.config',  # individual config file for versions under liberty
   $default_lvm_backend        = 'lvmdriver',
-  $provisioning_type          = 'thick',  # thick or thin
 )
 {
   notify {'Configure Cinder to use ScaleIO cluster': }
@@ -38,14 +37,6 @@ class scaleio_openstack::cinder (
     Ini_setting <| |> ~> Service['cinder-volume']
     File <| |> ~> Service['cinder-volume']
     File_from_source <| |> ~> Service['cinder-volume']
-
-    scaleio_openstack::volume_type { 'Create default volume type':
-      ensure => $ensure,
-      name => 'scaleio',
-      protection_domain => $default_protection_domain,
-      storage_pool => $default_storage_pool,
-      provisioning => $provisioning_type,
-    }
 
     if $version_array[0] == '2014' and $version_array[1] == '2' {
       notify { "Detected cinder version $version - treat as Juno": }
