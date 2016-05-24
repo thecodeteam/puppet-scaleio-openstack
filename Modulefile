@@ -1,5 +1,5 @@
 name    'cloudscaling-scaleio_openstack'
-version '0.3.12'
+version '0.3.13'
 source 'UNKNOWN'
 author 'Alexey Morlang, EMC'
 license 'Apache License, Version 2.0'
