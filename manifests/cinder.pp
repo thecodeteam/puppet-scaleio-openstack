@@ -121,7 +121,7 @@ class scaleio_openstack::cinder (
 
       patch_common { 'patch kilo cinder conf': }
     }
-    elsif $version_array[0] == '7' or $version_array[0] == '8' {
+    elsif $version_array[0] == '7' {
       notify { "Detected cinder version $version - treat as Liberty/Mitaka": }
 
       file { "Ensure directory has access: /bin/emc/scaleio":
@@ -129,6 +129,12 @@ class scaleio_openstack::cinder (
         path    => '/bin/emc/scaleio',
         recurse => true,
         mode  => '0755',
+      } ->
+      scaleio_openstack::file_from_source {'scaleio driver for cinder':
+        ensure    => $ensure,
+        dir       => "${::cinder_path}/volume/drivers/emc",
+        file_name => 'scaleio_ext.py',
+        src_dir   => 'liberty/cinder'
       } ->
       ini_setting { 'enabled_backends':
         path    => $cinder_config_file,
@@ -147,7 +153,7 @@ class scaleio_openstack::cinder (
         path    => $cinder_config_file,
         section => 'scaleio',
         setting => 'volume_driver',
-        value   => 'cinder.volume.drivers.emc.scaleio.ScaleIODriver',
+        value   => 'cinder.volume.drivers.emc.scaleio_ext.ScaleIODriver',
       } ->
       ini_setting { 'scaleio volume_backend_name':
         path    => $cinder_config_file,
