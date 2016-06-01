@@ -12,8 +12,14 @@ class scaleio_openstack::cinder (
   $cinder_config_file         = '/etc/cinder/cinder.conf',  # file where cinder config parameters will be stored
   $scaleio_cinder_config_file = '/etc/cinder/cinder_scaleio.config',  # individual config file for versions under liberty
   $default_lvm_backend        = 'lvmdriver',
+  $provisioning_type          = 'thick',  # string - thin | thick
 )
 {
+  $san_thin_provision = $provisioning_type ? {
+    'thin'  => 'True',
+    default => 'False'
+  }
+  
   notify {'Configure Cinder to use ScaleIO cluster': }
 
   if ! $::cinder_path {
@@ -54,7 +60,9 @@ class scaleio_openstack::cinder (
         src_dir   => 'juno/cinder'
       } ->
 
-      patch_common { 'patch juno cinder conf': }
+      patch_common { 'patch juno cinder conf':
+        san_thin_provision => $san_thin_provision,
+      }
     }
     elsif $version_array[0] == '2015' and $version_array[1] == '1' {
       notify { "Detected cinder version $version - treat as Kilo": }
@@ -119,7 +127,9 @@ class scaleio_openstack::cinder (
         value   => 'cinder.volume.managers.emc.manager.EMCVolumeManager',
       } ->
 
-      patch_common { 'patch kilo cinder conf': }
+      patch_common { 'patch kilo cinder conf':
+        san_thin_provision => $san_thin_provision,
+      }
     }
     elsif $version_array[0] == '7' {
       notify { "Detected cinder version $version - treat as Liberty/Mitaka": }
@@ -142,12 +152,12 @@ class scaleio_openstack::cinder (
         setting => 'enabled_backends',
         value   => $scaleio_openstack::cinder::enabled_backends,
       } ->
-      ini_setting { 'default_volume_type':
+      ini_setting { 'san_thin_provision':
         ensure  => $ensure,
         path    => $cinder_config_file,
         section => 'DEFAULT',
-        setting => 'default_volume_type',
-        value   => 'scaleio',
+        setting => 'san_thin_provision',
+        value   => $san_thin_provision,
       } ->
       ini_setting { 'scaleio volume_driver':
         path    => $cinder_config_file,
@@ -233,7 +243,9 @@ class scaleio_openstack::cinder (
     }
   }
 
-  define patch_common {
+  define patch_common(
+    $san_thin_provision
+  ) {
     file { $scaleio_openstack::cinder::scaleio_cinder_config_file:
       ensure  =>  $scaleio_openstack::cinder::ensure,
       content => template('scaleio_openstack/cinder_scaleio.conf.erb'),
@@ -250,11 +262,11 @@ class scaleio_openstack::cinder (
       setting => 'enabled_backends',
       value   => $scaleio_openstack::cinder::enabled_backends,
     } ->
-    ini_setting { 'default_volume_type':
-      path    => $scaleio_openstack::cinder::cinder_config_file,
+    ini_setting { 'san_thin_provision':
+      ensure  => $ensure,
       section => 'DEFAULT',
-      setting => 'default_volume_type',
-      value   => 'scaleio',
+      setting => 'san_thin_provision',
+      value   => $san_thin_provision,
     } ->
     ini_setting { 'volume_driver':
       path    => $scaleio_openstack::cinder::cinder_config_file,

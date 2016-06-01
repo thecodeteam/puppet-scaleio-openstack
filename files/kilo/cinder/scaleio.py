@@ -81,6 +81,7 @@ class ScaleIODriver(driver.VolumeDriver):
     storage_pool_id = None
     protection_domain_name = None
     protection_domain_id = None
+    default_provisioning_type = None
     config = None
     is_container = False
 
@@ -131,6 +132,9 @@ class ScaleIODriver(driver.VolumeDriver):
 #             raise RuntimeError("Must specify protection domain name or id")
         if (self.protection_domain_name != None and self.protection_domain_id != None):
             raise RuntimeError("Cannot specify both protection domain name and protection domain id")
+        self.default_provisioning_type = self._get_provisioning_type(
+            self.config)
+        LOG.info("default provisioning type: %s" % self.default_provisioning_type)
 
     def _in_container(self):
         """
@@ -301,6 +305,21 @@ class ScaleIODriver(driver.VolumeDriver):
             storage_pool_id = None
         return storage_pool_id;
 
+    def _get_provisioning_type(self, config):
+        warn_msg = "default provisioning type not found"
+        try:
+            provisioning_type = config.get(
+                'DEFAULT', 'san_thin_provision')
+            if provisioning_type is not None:
+                provisioning_type = 'thin' if provisioning_type else 'thick'
+            else:
+                LOG.warning(warn_msg)
+                provisioning_type = None                
+        except ConfigParser.Error as e:
+            LOG.warning(warn_msg)
+            provisioning_type = None
+        return provisioning_type
+
     def _find_storage_pool_id_from_storage_type(self, storage_type):
         try:
             pool_id = storage_type[STORAGE_POOL_ID]
@@ -337,7 +356,7 @@ class ScaleIODriver(driver.VolumeDriver):
         try:
             provisioning_type = storage_type[PROVISIONING_KEY]
         except KeyError:
-            provisioning_type = None
+            provisioning_type = self.default_provisioning_type
         return provisioning_type
 
     def _find_iops_limit(self, storage_type):
