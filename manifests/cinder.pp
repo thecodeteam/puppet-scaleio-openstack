@@ -19,7 +19,7 @@ class scaleio_openstack::cinder (
     'thin'  => 'True',
     default => 'False'
   }
-  
+
   notify {'Configure Cinder to use ScaleIO cluster': }
 
   if ! $::cinder_path {
@@ -133,6 +133,23 @@ class scaleio_openstack::cinder (
     }
     elsif $version_array[0] == '7' {
       notify { "Detected cinder version $version - treat as Liberty/Mitaka": }
+
+      if $::os_brick_path {
+        file { "/tmp/9e70f2c4.diff":
+          source => "puppet:///modules/scaleio_openstack/liberty/cinder/9e70f2c4.diff",
+          require => File_from_source['scaleio driver for cinder']
+        } ->
+        exec { 'os-brick patch':
+          onlyif => "test ${ensure} = present && patch -p 2 -i /tmp/9e70f2c4.diff -d ${::os_brick_path} -b -f --dry-run",
+          command => "patch -p 1 -i /tmp/9e70f2c4.diff -d ${::os_brick_path} -b",
+          path => '/bin:/usr/bin',
+        } ->
+        exec { 'os-brick un-patch':
+          onlyif => "test ${ensure} = absent && patch -p 2 -i /tmp/9e70f2c4.diff -d ${::os_brick_path} -b -R -f --dry-run",
+          command => "patch -p 1 -i /tmp/9e70f2c4.diff -d ${::os_brick_path} -b -R",
+          path => '/bin:/usr/bin',
+        }
+      }
 
       file { "Ensure directory has access: /bin/emc/scaleio":
         ensure  => directory,

@@ -1,0 +1,52 @@
+From 9e70f2c435983cba22353fd920284fcf7c1d7ffd Mon Sep 17 00:00:00 2001
+From: Xing Yang <xing.yang@emc.com>
+Date: Tue, 17 Nov 2015 00:23:38 -0500
+Subject: [PATCH] Fix iopsLimit parameter in ScaleIO connector
+
+The parameter 'iops_limit' in the ScaleIO connector
+is wrong. The correct parameter should be 'iopsLimit'.
+Because of this error, the iops of the volume will stay
+unlimited even if the user sets a limit on the iops.
+This patch fixes this error.
+
+Change-Id: I6b9212e9046bf3e2c9bbbde6354c298b359de3a6
+Closes-Bug: #1521396
+(cherry picked from commit 665ffea7307a9012f532a35c074667dc2963ad45)
+---
+
+diff --git a/os_brick/initiator/connector.py b/os_brick/initiator/connector.py
+index b2a1818..12e21b0 100644
+--- a/os_brick/initiator/connector.py
++++ b/os_brick/initiator/connector.py
+@@ -2024,7 +2024,7 @@
+             if self.bandwidth_limit is not None:
+                 params['bandwidthLimitInKbps'] = self.bandwidth_limit
+             if self.iops_limit is not None:
+-                params['iops_limit'] = self.iops_limit
++                params['iopsLimit'] = self.iops_limit
+ 
+             request = (
+                 "https://%(server_ip)s:%(server_port)s/api/instances/"
+diff --git a/os_brick/tests/initiator/test_connector.py b/os_brick/tests/initiator/test_connector.py
+index d279051..8b65070 100644
+--- a/os_brick/tests/initiator/test_connector.py
++++ b/os_brick/tests/initiator/test_connector.py
+@@ -1970,6 +1970,18 @@
+         """Fake REST server"""
+         api_call = url.split(':', 2)[2].split('/', 1)[1].replace('api/', '')
+ 
++        if 'setMappedSdcLimits' in api_call:
++            self.assertNotIn("iops_limit", kwargs['data'])
++            if "iopsLimit" not in kwargs['data']:
++                self.assertIn("bandwidthLimitInKbps",
++                              kwargs['data'])
++            elif "bandwidthLimitInKbps" not in kwargs['data']:
++                self.assertIn("iopsLimit", kwargs['data'])
++            else:
++                self.assertIn("bandwidthLimitInKbps",
++                              kwargs['data'])
++                self.assertIn("iopsLimit", kwargs['data'])
++
+         try:
+             return self.mock_calls[api_call]
+         except KeyError:
