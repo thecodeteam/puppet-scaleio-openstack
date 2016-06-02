@@ -55,9 +55,7 @@ class scaleio_openstack::cinder (
         src_dir   => 'juno/cinder'
       } ->
 
-      patch_common { 'patch juno cinder conf':
-        san_thin_provision => $san_thin_provision,
-      }
+      patch_common { 'patch juno cinder conf': }
     }
     elsif $version_array[0] == '2015' and $version_array[1] == '1' {
       notify { "Detected cinder version $version - treat as Kilo": }
@@ -122,9 +120,7 @@ class scaleio_openstack::cinder (
         value   => 'cinder.volume.managers.emc.manager.EMCVolumeManager',
       } ->
 
-      patch_common { 'patch kilo cinder conf':
-        san_thin_provision => $san_thin_provision,
-      }
+      patch_common { 'patch kilo cinder conf': }
     }
     elsif $version_array[0] == '7' {
       notify { "Detected cinder version $version - treat as Liberty/Mitaka": }
