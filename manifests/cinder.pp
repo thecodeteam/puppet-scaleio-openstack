@@ -15,11 +15,6 @@ class scaleio_openstack::cinder (
   $provisioning_type          = 'thick',  # string - thin | thick
 )
 {
-  $san_thin_provision = $provisioning_type ? {
-    'thin'  => 'True',
-    default => 'False'
-  }
-
   notify {'Configure Cinder to use ScaleIO cluster': }
 
   if ! $::cinder_path {
@@ -133,6 +128,11 @@ class scaleio_openstack::cinder (
     }
     elsif $version_array[0] == '7' {
       notify { "Detected cinder version $version - treat as Liberty/Mitaka": }
+
+      $san_thin_provision = $provisioning_type ? {
+        'thin'  => 'True',
+        default => 'False'
+      }
 
       if $::os_brick_path {
         file { "/tmp/9e70f2c4.diff":
@@ -260,8 +260,12 @@ class scaleio_openstack::cinder (
   }
 
   define patch_common(
-    $san_thin_provision
   ) {
+    $scaleio_provisioning_type = $scaleio_openstack::cinder::provisioning_type ? {
+      'thin'  => 'ThinProvisioned',
+      default => 'ThickProvisioned'
+    }
+
     file { $scaleio_openstack::cinder::scaleio_cinder_config_file:
       ensure  =>  $scaleio_openstack::cinder::ensure,
       content => template('scaleio_openstack/cinder_scaleio.conf.erb'),
@@ -277,12 +281,6 @@ class scaleio_openstack::cinder (
       section => 'DEFAULT',
       setting => 'enabled_backends',
       value   => $scaleio_openstack::cinder::enabled_backends,
-    } ->
-    ini_setting { 'san_thin_provision':
-      path    => $scaleio_openstack::cinder::cinder_config_file,
-      section => 'scaleio',
-      setting => 'san_thin_provision',
-      value   => $san_thin_provision,
     } ->
     ini_setting { 'volume_driver':
       path    => $scaleio_openstack::cinder::cinder_config_file,

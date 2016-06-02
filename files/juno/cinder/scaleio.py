@@ -126,8 +126,7 @@ class ScaleIODriver(driver.VolumeDriver):
             raise RuntimeError(
                 "Cannot specify both protection domain name \
                  and protection domain id")
-        self.default_provisioning_type = self._get_provisioning_type(
-            self.config)
+        self.default_provisioning_type = self._get_provisioning_type(self.config)
         LOG.info("default provisioning type: %s" % self.default_provisioning_type)
 
     def _get_rest_server_ip(self, config):
@@ -259,12 +258,9 @@ class ScaleIODriver(driver.VolumeDriver):
         return protection_domain_name
 
     def _get_storage_pools(self, config):
-
         storage_pools = [e.strip() for e in config.get(
             CONFIG_SECTION_NAME, 'storage_pools').split(',')]
-    #    SPYS = [e.strip() for e in parser.get('global', 'spys').split(',')]
 
-    #    storage_pools = config.get(CONFIG_SECTION_NAME, 'storage_pools')
         LOG.warning("storage pools are {0}".format(storage_pools))
         return storage_pools
 
@@ -297,10 +293,9 @@ class ScaleIODriver(driver.VolumeDriver):
     def _get_provisioning_type(self, config):
         warn_msg = "default provisioning type not found"
         try:
-            provisioning_type = config.get(
-                'DEFAULT', 'san_thin_provision')
+            provisioning_type = config.get(CONFIG_SECTION_NAME, 'provisioning_type')
             if provisioning_type is not None:
-                provisioning_type = 'thin' if provisioning_type else 'thick'
+                provisioning_type = 'thin' if provisioning_type == 'ThinProvisioned' else 'thick'
             else:
                 LOG.warning(warn_msg)
                 provisioning_type = None
@@ -491,7 +486,7 @@ class ScaleIODriver(driver.VolumeDriver):
         LOG.info("pool id is %s" % pool_id)
         if (provisioning_type == 'thin'):
             provisioning = "ThinProvisioned"
-#       default volume type is thick
+        # default volume type is thick
         else:
             provisioning = "ThickProvisioned"
 

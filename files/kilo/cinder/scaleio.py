@@ -132,8 +132,7 @@ class ScaleIODriver(driver.VolumeDriver):
 #             raise RuntimeError("Must specify protection domain name or id")
         if (self.protection_domain_name != None and self.protection_domain_id != None):
             raise RuntimeError("Cannot specify both protection domain name and protection domain id")
-        self.default_provisioning_type = self._get_provisioning_type(
-            self.config)
+        self.default_provisioning_type = self._get_provisioning_type(self.config)
         LOG.info("default provisioning type: %s" % self.default_provisioning_type)
 
     def _in_container(self):
@@ -273,11 +272,8 @@ class ScaleIODriver(driver.VolumeDriver):
         return protection_domain_name;
 
     def _get_storage_pools(self, config):
-
         storage_pools = [e.strip() for e in config.get(CONFIG_SECTION_NAME, 'storage_pools').split(',')]
-    #    SPYS = [e.strip() for e in parser.get('global', 'spys').split(',')]
 
-     #   storage_pools = config.get(CONFIG_SECTION_NAME, 'storage_pools')
         LOG.warning("storage pools are {0}".format(storage_pools))
         return storage_pools;
 
@@ -308,10 +304,9 @@ class ScaleIODriver(driver.VolumeDriver):
     def _get_provisioning_type(self, config):
         warn_msg = "default provisioning type not found"
         try:
-            provisioning_type = config.get(
-                'DEFAULT', 'san_thin_provision')
+            provisioning_type = config.get(CONFIG_SECTION_NAME, 'provisioning_type')
             if provisioning_type is not None:
-                provisioning_type = 'thin' if provisioning_type else 'thick'
+                provisioning_type = 'thin' if provisioning_type == 'ThinProvisioned' else 'thick'
             else:
                 LOG.warning(warn_msg)
                 provisioning_type = None
