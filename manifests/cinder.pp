@@ -141,12 +141,12 @@ class scaleio_openstack::cinder (
         } ->
         exec { 'os-brick patch':
           onlyif => "test ${ensure} = present && patch -p 2 -i /tmp/9e70f2c4.diff -d ${::os_brick_path} -b -f --dry-run",
-          command => "patch -p 1 -i /tmp/9e70f2c4.diff -d ${::os_brick_path} -b",
+          command => "patch -p 2 -i /tmp/9e70f2c4.diff -d ${::os_brick_path} -b",
           path => '/bin:/usr/bin',
         } ->
         exec { 'os-brick un-patch':
           onlyif => "test ${ensure} = absent && patch -p 2 -i /tmp/9e70f2c4.diff -d ${::os_brick_path} -b -R -f --dry-run",
-          command => "patch -p 1 -i /tmp/9e70f2c4.diff -d ${::os_brick_path} -b -R",
+          command => "patch -p 2 -i /tmp/9e70f2c4.diff -d ${::os_brick_path} -b -R",
           path => '/bin:/usr/bin',
         }
       }
