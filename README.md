@@ -2,7 +2,7 @@
 
 ## Overview
 
-Disclaimer: Current version is Beta 2.
+Disclaimer: Current version is RC1.
 
 A Puppet module that updates OpenStack to work with ScaleIO 2.0 block storage.
 Provides supports for volumes and nova ephemeral storages including live migration and resize.
