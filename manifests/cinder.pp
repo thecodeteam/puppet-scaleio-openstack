@@ -170,9 +170,8 @@ class scaleio_openstack::cinder (
         value   => $scaleio_openstack::cinder::enabled_backends,
       } ->
       ini_setting { 'san_thin_provision':
-        ensure  => $ensure,
         path    => $cinder_config_file,
-        section => 'DEFAULT',
+        section => 'scaleio',
         setting => 'san_thin_provision',
         value   => $san_thin_provision,
       } ->
@@ -280,8 +279,8 @@ class scaleio_openstack::cinder (
       value   => $scaleio_openstack::cinder::enabled_backends,
     } ->
     ini_setting { 'san_thin_provision':
-      ensure  => $ensure,
-      section => 'DEFAULT',
+      path    => $scaleio_openstack::cinder::cinder_config_file,
+      section => 'scaleio',
       setting => 'san_thin_provision',
       value   => $san_thin_provision,
     } ->
