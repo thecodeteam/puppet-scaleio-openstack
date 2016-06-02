@@ -30,13 +30,13 @@ BANDWIDTH_PER_GB = 'sio:bandwidth_per_gb'
 
 
 class ScaleIODriver(scaleio.ScaleIODriver):
-    default_provisioning_type = None
 
     def __init__(self, *args, **kwargs):
         super(ScaleIODriver, self).__init__(*args, **kwargs)
-        self.default_provisioning_type = self._get_provisioning_type(
-            CONF)
-        LOG.info(_LI("default provisioning type: %s"), self.default_provisioning_type)
+        self.provisioning_type = (
+            'thin'
+            if self.configuration.san_thin_provision else
+            'thick')
 
     def initialize_connection(self, volume, connector):
         result = super(ScaleIODriver, self).initialize_connection(volume,
@@ -51,14 +51,6 @@ class ScaleIODriver(scaleio.ScaleIODriver):
         result['data']['iopsLimit'] = iops_limit
         result['data']['bandwidthLimit'] = bandwidth_limit
         return result
-
-    def _get_provisioning_type(self, config):
-        provisioning_type = self.configuration.safe_get('san_thin_provision')
-        if provisioning_type is not None:
-            provisioning_type = 'thin' if provisioning_type else 'thick'
-        else:
-            LOG.warning(_LI("default provisioning type not found"))
-        return provisioning_type
 
     def _get_bandwidth_limit(self, size, storage_type):
         try:
@@ -108,7 +100,5 @@ class ScaleIODriver(scaleio.ScaleIODriver):
         return size + num - (size % num)
 
     def _find_provisioning_type(self, storage_type):
-        provisioning_type = super(ScaleIODriver, self)._find_provisioning_type(storage_type)
-        if provisioning_type is None:
-            provisioning_type = self.default_provisioning_type
-        return provisioning_type
+        return storage_type.get(scaleio.PROVISIONING_KEY,
+                                self.provisioning_type)

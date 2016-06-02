@@ -314,7 +314,7 @@ class ScaleIODriver(driver.VolumeDriver):
                 provisioning_type = 'thin' if provisioning_type else 'thick'
             else:
                 LOG.warning(warn_msg)
-                provisioning_type = None                
+                provisioning_type = None
         except ConfigParser.Error as e:
             LOG.warning(warn_msg)
             provisioning_type = None
