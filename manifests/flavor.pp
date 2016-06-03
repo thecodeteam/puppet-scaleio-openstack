@@ -56,8 +56,9 @@ define scaleio_openstack::flavor(
     undef     => '',
     default   => "--is-public ${is_public}"
   }
-  if count(split($name, ':')) > 1 {
-    $flavor_name = $name[0]
+  $parsed_name = split($name, ':')
+  if count($parsed_name) > 1 {
+    $flavor_name = $parsed_name[0]
   } else {
     $flavor_name = $name
   }
