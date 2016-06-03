@@ -7,7 +7,8 @@
 
 define scaleio_openstack::flavor(
   $ensure             = present,  #
-  $name,                          # name of flavor to be created
+  $name,                          # name of flavor to be created, could be name:something if needed to remove/delete
+                                  # flavor for edit purposes
   $storage_pool       = undef,    # name of storage pool to use for the flavor
   $id                 = 'auto',   # unique ID of the new flavor.
   $ram_size           = undef,    # memory size in MB
@@ -55,12 +56,17 @@ define scaleio_openstack::flavor(
     undef     => '',
     default   => "--is-public ${is_public}"
   }
+  if count(split($name, ':')) > 1 {
+    $flavor_name = $name[0]
+  } else {
+    $flavor_name = $name
+  }
   $flavor_opts = "${ephemeral_disk_opts} ${swap_disk_opts} ${rxtx_factor_opts} ${is_public_opts}"
-  $check_cmd = "nova flavor-list | grep -q '${name}'"
-  $flavor_resource_name = "ScaleIO nova flavor ${name} ${ensure}"
+  $check_cmd = "nova flavor-list | grep -q '${flavor_name}'"
+  $flavor_resource_name = "ScaleIO nova flavor ${flavor_name} ${ensure}"
   if $ensure == present {
     exec {$flavor_resource_name:
-      command     => "nova flavor-create ${flavor_opts} ${name} ${id} ${ram_size} ${disk_size} ${vcpus}",
+      command     => "nova flavor-create ${flavor_opts} ${flavor_name} ${id} ${ram_size} ${disk_size} ${vcpus}",
       path        => ['/usr/bin', '/bin'],
       unless      => $check_cmd,
     }
@@ -74,8 +80,8 @@ define scaleio_openstack::flavor(
     }
     $flavor_attributes = "${sp_opts} ${provisioning_opts}"
     if $flavor_attributes != ' ' {
-      exec {"ScaleIO nova flavor ${name} attributes ${flavor_attributes}":
-        command => "nova flavor-key '${name}' set ${flavor_attributes}",
+      exec {"ScaleIO nova flavor ${flavor_name} attributes ${flavor_attributes}":
+        command => "nova flavor-key '${flavor_name}' set ${flavor_attributes}",
         path    => ['/usr/bin', '/bin'],
         onlyif  => $check_cmd,
         require => Exec[$flavor_resource_name],
@@ -83,7 +89,7 @@ define scaleio_openstack::flavor(
     }
   } else {
     exec {$flavor_resource_name:
-      command     => "nova flavor-delete '${name}'",
+      command     => "nova flavor-delete '${flavor_name}'",
       path        => ['/usr/bin', '/bin'],
       onlyif      => $check_cmd,
     }
