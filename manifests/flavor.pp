@@ -32,11 +32,15 @@ define scaleio_openstack::flavor(
     undef   => [],
     default => ["OS_TENANT_NAME=${::nova_tenant_name}"]
   }
+  $os_project_name = $::nova_tenant_name ? {
+    undef   => [],
+    default => ["OS_PROJECT_NAME=${::nova_tenant_name}"]
+  }
   $os_auth_uri = $::nova_auth_uri ? {
     undef   => [],
     default => ["OS_AUTH_URL=${::nova_auth_uri}"]
   }
-  $environment = concat($os_username, concat($os_password, concat($os_tenant_name, $os_auth_uri)))
+  $environment = concat($os_username, concat($os_password, concat($os_tenant_name, concat($os_project_name, $os_auth_uri))))
   Exec {
     environment => $environment
   }
