@@ -78,6 +78,21 @@ Files:
   }
   ```
 
+## Nova and cinder extensions
+
+1. ScaleIO ephemeral storage backend for nova is supported (see README here https://github.com/cloudscaling/nova-scaleio-ephemeral )
+
+2. Volume type QoS additions. The user can specify those in order to get QoS correlated with
+the volume size. The driver will always choose the minimum between the scaling QoS
+keys and the pertinent maximum limitation key: maxIOPS, maxBWS:
+  * sio:iops_per_gb
+  * sio:bandwidth_per_gb
+
+3. Cinder configuration addition:
+  * provisioning_type for Juno and Kilo (thin or thick)
+  * san_thin_provision for Liberty (true or false)
+
+
 ## Contact information
 
 - [Project Bug Tracker](https://github.com/cloudscaling/puppet-scaleio-openstack/issues)
