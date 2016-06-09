@@ -119,9 +119,13 @@ class LibvirtScaleIOVolumeDriver(LibvirtBaseVolumeDriver):
                 time.sleep(1)
                 continue
             filenames = os.listdir(by_id_path)
-            LOG.info("Files found in {0} path: {1} ".format(by_id_path, filenames))
+            LOG.warning(
+                "Files found in {0} path: {1} ".format(
+                    by_id_path,
+                    filenames))
             for filename in filenames:
-                if (filename.startswith("emc-vol") and filename.endswith(volume_id)):
+                if (filename.startswith("emc-vol") and
+                        filename.endswith(volume_id)):
                     disk_filename = filename
             if not disk_filename:
                 LOG.warn(
@@ -194,7 +198,7 @@ class LibvirtScaleIOVolumeDriver(LibvirtBaseVolumeDriver):
             res = requests.post(request, data=json.dumps(params), headers=headers,
                                 auth=(server_username, token), verify=False)
         return res
-
+    
     def connect_volume(self, connection_info, disk_info):
         """Connect the volume. Returns xml for libvirt."""
         conf = super(LibvirtScaleIOVolumeDriver,
@@ -276,7 +280,7 @@ class LibvirtScaleIOVolumeDriver(LibvirtBaseVolumeDriver):
             if (bandwidth_limit is not None):
                 params['bandwidthLimitInKbps'] = bandwidth_limit
             if (iops_limit is not None):
-                params['iops_limit'] = iops_limit
+                params['iopsLimit'] = iops_limit
             request = "https://" + server_ip + ":" + server_port + \
                 "/api/instances/Volume::" + \
                 str(volume_id) + "/action/setMappedSdcLimits"

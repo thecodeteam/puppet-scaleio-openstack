@@ -1,4 +1,5 @@
-# Copyright (c) 2013 EMC Corporation
+#
+# Copyright (c) 2011-2015 EMC Corporation
 # All Rights Reserved
 from requests.exceptions import ConnectionError
 from cinder.version import version_info
@@ -9,6 +10,7 @@ from cinder.version import version_info
 # limited to the terms and conditions of the License Agreement under which
 # it is provided by or on behalf of EMC.
 
+#OpenStack Version =  Juno
 """
 Driver for EMC ScaleIO based on ScaleIO remote CLI.
 
@@ -205,6 +207,11 @@ class ScaleIODriver(driver.VolumeDriver):
             round_volume_capacity = 'True'
         return round_volume_capacity
 
+    def _round_to_8_gran(self, size):
+        if size%8==0:
+            return size
+        return size + 8 - (size%8)
+
     def _get_force_delete(self, config):
         warn_msg = "force_delete is not set, using default of False"
         try:
@@ -260,7 +267,9 @@ class ScaleIODriver(driver.VolumeDriver):
     def _get_storage_pools(self, config):
         storage_pools = [e.strip() for e in config.get(
             CONFIG_SECTION_NAME, 'storage_pools').split(',')]
+    #    SPYS = [e.strip() for e in parser.get('global', 'spys').split(',')]
 
+    #    storage_pools = config.get(CONFIG_SECTION_NAME, 'storage_pools')
         LOG.warning("storage pools are {0}".format(storage_pools))
         return storage_pools
 
@@ -409,11 +418,11 @@ class ScaleIODriver(driver.VolumeDriver):
             self.storage_pool_id = None
         if (storage_pool_id is not None):
             self.storage_pool_id = storage_pool_id
-            self.storage_pool_name = None
+            self.storage_pool_name = None       
         if (self.storage_pool_name is None and
                 self.storage_pool_id is None):
             raise RuntimeError("Must specify storage pool name or id")
-
+        
         if (protection_domain_name is not None and
                 protection_domain_id is not None):
             raise RuntimeError(
@@ -460,10 +469,10 @@ class ScaleIODriver(driver.VolumeDriver):
         pool_name = self.storage_pool_name
         pool_id = self.storage_pool_id
         if (pool_name is not None):
-            encoded_domain_name = urllib.quote(pool_name, '')
+            encoded_pool_name = urllib.quote(pool_name, '')
             request = "https://" + self.server_ip + ":" + self.server_port + \
                 "/api/types/Pool/instances/getByName::" + \
-                domain_id + "," + encoded_domain_name
+                domain_id + "," + encoded_pool_name
             LOG.info("ScaleIO get pool id by name request: %s" % request)
             r = requests.get(
                 request,
@@ -486,7 +495,7 @@ class ScaleIODriver(driver.VolumeDriver):
         LOG.info("pool id is %s" % pool_id)
         if (provisioning_type == 'thin'):
             provisioning = "ThinProvisioned"
-        # default volume type is thick
+#       default volume type is thick
         else:
             provisioning = "ThickProvisioned"
 
@@ -603,7 +612,6 @@ class ScaleIODriver(driver.VolumeDriver):
                                           self.server_username,
                                           self.server_token),
                                     verify=verify_cert)
-
             return res
         return response
 
@@ -677,7 +685,10 @@ class ScaleIODriver(driver.VolumeDriver):
         request = "https://" + self.server_ip + ":" + self.server_port + \
             "/api/instances/Volume::" + vol_id + "/action/setVolumeSize"
         LOG.info("change volume capacity request: %s" % request)
-        volume_new_size = new_size
+        volume_new_size = self._round_to_8_gran(new_size)
+        volume_real_old_size = self._round_to_8_gran(volume.size)
+        if volume_real_old_size == volume_new_size:
+            return
         params = {'sizeInGB': str(volume_new_size)}
         headers = {'content-type': 'application/json'}
         if (self.verify_server_certificate == 'True'):
