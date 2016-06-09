@@ -120,17 +120,17 @@ class ScaleIODriver(driver.VolumeDriver):
         self.storage_pool_id = self._get_storage_pool_id(self.config)
         LOG.info("storage pool id: %s" % self.storage_pool_id)
 
-        if (self.storage_pool_name == None and self.storage_pool_id == None):
+        if (self.storage_pool_name is None and self.storage_pool_id is None):
             LOG.warning("No storage pool name or id was found, using default storage pool")
 #             self.storage_pool_name = 'Default'
         self.protection_domain_name = self._get_protection_domain_name(self.config)
         LOG.info("protection domain name: %s" % self.protection_domain_name)
         self.protection_domain_id = self._get_protection_domain_id(self.config)
         LOG.info("protection domain id: %s" % self.protection_domain_id)
-        if (self.protection_domain_name == None and self.protection_domain_id == None):
+        if (self.protection_domain_name is None and self.protection_domain_id is None):
             LOG.warning("No protection domain name or id was specified in configuration")
 #             raise RuntimeError("Must specify protection domain name or id")
-        if (self.protection_domain_name != None and self.protection_domain_id != None):
+        if (self.protection_domain_name is not None and self.protection_domain_id is not None):
             raise RuntimeError("Cannot specify both protection domain name and protection domain id")
         self.default_provisioning_type = self._get_provisioning_type(self.config)
         LOG.info("default provisioning type: %s" % self.default_provisioning_type)
@@ -269,7 +269,7 @@ class ScaleIODriver(driver.VolumeDriver):
         except ConfigParser.Error as e:
             LOG.warning(warn_msg)
             protection_domain_name = None
-        return protection_domain_name;
+        return protection_domain_name
 
     def _get_storage_pools(self, config):
         storage_pools = [e.strip() for e in config.get(CONFIG_SECTION_NAME, 'storage_pools').split(',')]
@@ -287,7 +287,7 @@ class ScaleIODriver(driver.VolumeDriver):
         except ConfigParser.Error as e:
             LOG.warning(warn_msg)
             storage_pool_name = None
-        return storage_pool_name;
+        return storage_pool_name
 
     def _get_storage_pool_id(self, config):
         warn_msg = "storage pool id not found"
@@ -510,8 +510,11 @@ class ScaleIODriver(driver.VolumeDriver):
             raise RuntimeError("Must specify protection domain name or id")
 
         domain_id = self.protection_domain_id
-        if (domain_id == None):
-            request = "https://" + self.server_ip + ":" + self.server_port + "/api/types/Domain/instances/getByName::" + self.protection_domain_name
+        if (domain_id is None):
+            encoded_domain_name = urllib.quote(self.protection_domain_name, '')
+
+            request = "https://" + self.server_ip + ":" + self.server_port + \
+                "/api/types/Domain/instances/getByName::" + encoded_domain_name
             LOG.info("ScaleIO get domain id by name request: %s" % request)
             r = requests.get(request, auth=(self.server_username, self.server_token), verify=verify_cert)
             r = self._check_response(r, request, 'get')
@@ -528,8 +531,11 @@ class ScaleIODriver(driver.VolumeDriver):
         LOG.info("domain id is %s" % domain_id)
         pool_name = self.storage_pool_name
         pool_id = self.storage_pool_id
-        if (pool_name != None):
-            request = "https://" + self.server_ip + ":" + self.server_port + "/api/types/Pool/instances/getByName::" + domain_id + "," + pool_name
+        if (pool_name is not None):
+            encoded_pool_name = urllib.quote(pool_name, '')
+            request = "https://" + self.server_ip + ":" + self.server_port + \
+                "/api/types/Pool/instances/getByName::" + \
+                domain_id + "," + encoded_pool_name
             LOG.info("ScaleIO get pool id by name request: %s" % request)
             r = requests.get(request, auth=(self.server_username, self.server_token), verify=verify_cert)
             pool_id = r.json()
@@ -718,7 +724,10 @@ class ScaleIODriver(driver.VolumeDriver):
         request = "https://" + self.server_ip + ":" + self.server_port + "/api/instances/Volume::" + vol_id + "/action/setVolumeSize"
         LOG.info("change volume capacity request: %s" % request)
         volume_new_size = new_size
-        params = {'sizeInGB' : str(volume_new_size)}
+        volume_real_old_size = self.volume_size(volume.size)
+        if volume_real_old_size == volume_new_size:
+            return
+        params = {'sizeInGB': str(volume_new_size)}
         headers = {'content-type': 'application/json'}
         if (self.verify_server_certificate == 'True'):
             verify_cert = self.server_certificate_path
@@ -895,9 +904,14 @@ class ScaleIODriver(driver.VolumeDriver):
             splitted_name = sp_name.split(':')
             domain_name = splitted_name[0]
             pool_name = splitted_name[1]
-            LOG.debug("domain name is {0}, pool name is {1}".format(domain_name, pool_name))
-            #get domain id from name
-            request = "https://" + self.server_ip + ":" + self.server_port + "/api/types/Domain/instances/getByName::" + domain_name
+            LOG.debug(
+                "domain name is {0}, pool name is {1}".format(
+                    domain_name,
+                    pool_name))
+            # get domain id from name
+            encoded_domain_name = urllib.quote(domain_name, '')
+            request = "https://" + self.server_ip + ":" + self.server_port + \
+                "/api/types/Domain/instances/getByName::" + encoded_domain_name
             LOG.info("ScaleIO get domain id by name request: %s" % request)
             #LOG.info("username: %s, password: %s, verify_cert: %s " % (self.server_username, self.server_token, verify_cert))
             r = requests.get(request, auth=(self.server_username, self.server_token), verify=verify_cert)
@@ -914,8 +928,11 @@ class ScaleIODriver(driver.VolumeDriver):
                 raise exception.VolumeBackendAPIException(data=msg)
             LOG.info("domain id is %s" % domain_id)
 
-            #get pool id from name
-            request = "https://" + self.server_ip + ":" + self.server_port + "/api/types/Pool/instances/getByName::" + domain_id + "," + pool_name
+            # get pool id from name
+            encoded_pool_name = urllib.quote(pool_name, '')
+            request = "https://" + self.server_ip + ":" + self.server_port + \
+                "/api/types/Pool/instances/getByName::" + \
+                domain_id + "," + encoded_pool_name
             LOG.info("ScaleIO get pool id by name request: %s" % request)
             r = requests.get(request, auth=(self.server_username, self.server_token), verify=verify_cert)
             pool_id = r.json()
