@@ -37,7 +37,8 @@ define scaleio_openstack::nova_common(
 
   scaleio_openstack::scaleio_filter_file { 'nova filter file':
     ensure  => $ensure,
-    service => 'nova'
+    service => 'nova',
+    openstack_version => $openstack_version,
   } ->
   file { "Ensure directory has access: /bin/emc/scaleio":
     ensure  => directory,

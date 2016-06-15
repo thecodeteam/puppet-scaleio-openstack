@@ -3,3 +3,6 @@ drv_cfg: CommandFilter, /bin/emc/scaleio/drv_cfg, root
 
 # nova/virt/libvirt/sio_utils.py: 'partprobe', device_path
 partprobe: CommandFilter, partprobe, root
+
+# nova/virt/libvirt/storage/sio_utils.py: 'dd', if=%s % old_path, ...
+dd: CommandFilter, dd, root
