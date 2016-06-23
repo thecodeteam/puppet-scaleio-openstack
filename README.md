@@ -2,8 +2,6 @@
 
 ## Overview
 
-Disclaimer: Current version is RC1.
-
 A Puppet module that updates OpenStack to work with ScaleIO 2.0 block storage.
 Provides supports for volumes and nova ephemeral storages including live migration and resize.
 
@@ -23,10 +21,10 @@ should be created in OpenStack.
 
 ### Tested with
 
-* Puppet 3.7.2+
+* Puppet 3.*
 * ScaleIO 2.0
 * Ubuntu 14.04
-* Linux kernel 4.2.0-30-generic and 3.13.0-85-generic
+* Linux kernel 4.2.0-30-generic and 3.13.0-83-generic
 * OpenStack Juno, Kilo, Liberty
 
 ### Setup Requirements
@@ -80,7 +78,7 @@ Files:
 
 ## Nova and cinder extensions
 
-1. ScaleIO ephemeral storage backend for nova is supported (see README here https://github.com/cloudscaling/nova-scaleio-ephemeral )
+1. ScaleIO ephemeral storage backend for nova is supported (see README here https://github.com/emccode/nova-scaleio-ephemeral )
 
 2. Volume type QoS additions. The user can specify those in order to get QoS correlated with
 the volume size. The driver will always choose the minimum between the scaling QoS
@@ -95,4 +93,4 @@ keys and the pertinent maximum limitation key: maxIOPS, maxBWS:
 
 ## Contact information
 
-- [Project Bug Tracker](https://github.com/cloudscaling/puppet-scaleio-openstack/issues)
+- [Project Bug Tracker](https://github.com/emccode/puppet-scaleio-openstack/issues)
