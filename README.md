@@ -82,7 +82,7 @@ Files:
 
 2. Volume type QoS additions. The user can specify those in order to get QoS correlated with
 the volume size. The driver will always choose the minimum between the scaling QoS
-keys and the pertinent maximum limitation key: maxIOPS, maxBWS:
+keys and the pertinent maximum limitation key: sio:iops_limit, sio:bandwidth_limit:
   * sio:iops_per_gb
   * sio:bandwidth_per_gb
 
