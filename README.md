@@ -10,7 +10,7 @@ should be created in OpenStack.
 
 ## Setup
 
-### What Puppet-ScaleIO affects
+### What Puppet-ScaleIO-Openstack affects
 
 * Adds rootwrap filters
 * Modifies nova.conf
