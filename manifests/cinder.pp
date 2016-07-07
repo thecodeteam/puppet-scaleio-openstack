@@ -122,7 +122,7 @@ class scaleio_openstack::cinder (
 
       patch_common { 'patch kilo cinder conf': }
     }
-    elsif $version_array[0] == '7' {
+    elsif $version_array[0] == '7' or $version_array[0] == '8' {
       notify { "Detected cinder version $version - treat as Liberty/Mitaka": }
 
       $san_thin_provision = $provisioning_type ? {
@@ -130,7 +130,7 @@ class scaleio_openstack::cinder (
         default => 'False'
       }
 
-      if $::os_brick_path {
+      if $version_array[0] == '7' and $::os_brick_path {
         file { "/tmp/9e70f2c4.diff":
           source => "puppet:///modules/scaleio_openstack/liberty/cinder/9e70f2c4.diff",
           require => File_from_source['scaleio driver for cinder']
