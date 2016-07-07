@@ -67,6 +67,24 @@ class scaleio_openstack::nova(
         nova_config_file => $nova_config_file,
       }
     }
+    elsif $core_version in ['13.0.0'] {
+      notify { "Detected nova version ${version} - treat as Mitaka": }
+
+      scaleio_openstack::nova_common { 'nova common for Mitaka':
+        ensure => $ensure,
+        gateway_user => $gateway_user,
+        gateway_password => $gateway_password,
+        gateway_ip => $gateway_ip,
+        gateway_port => $gateway_port,
+        protection_domains => $protection_domains,
+        storage_pools => $storage_pools,
+        provisioning_type => $provisioning_type,
+        openstack_version => 'mitaka',
+        siolib_file => 'siolib-1.4.5.tar.gz',
+        nova_patch => "${version}.diff",
+        nova_config_file => $nova_config_file,
+      }
+    }
     elsif $core_version in ['2015.1.1', '2015.1.2', '2015.1.3', '2015.1.4']  {
       notify { "Detected nova version ${version} - treat as Kilo": }
 
