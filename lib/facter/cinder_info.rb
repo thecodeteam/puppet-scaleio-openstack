@@ -11,11 +11,11 @@ end
 Facter.add(:cinder_version) do
   setcode do
     pkg = Puppet::Type.type(:package).new(:name => "python-cinder")
-    $version = pkg.retrieve[pkg.property(:ensure)]
-    if $version =~ /:/ then
-      $version = $version.split(':')[1]
+    version = pkg.retrieve[pkg.property(:ensure)].to_s
+    if version =~ /:/ then
+      version = version.split(':')[1]
     end
-    $version
+    version
   end
 end
 
