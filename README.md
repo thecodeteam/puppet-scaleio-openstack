@@ -21,7 +21,7 @@ should be created in OpenStack.
 
 ### Tested with
 
-* Puppet 3.*
+* Puppet 3.*, 4.*
 * ScaleIO 2.0
 * Ubuntu 14.04
 * Linux kernel 4.2.0-30-generic and 3.13.0-83-generic
