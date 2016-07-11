@@ -37,7 +37,7 @@ class scaleio_openstack::cinder (
     }
     Ini_setting <| |> ~> Service['cinder-volume']
     File <| |> ~> Service['cinder-volume']
-    File_from_source <| |> ~> Service['cinder-volume']
+    Scaleio_openstack::File_from_source <| |> ~> Service['cinder-volume']
 
     if $version_array[0] == '2014' and $version_array[1] == '2' {
       notify { "Detected cinder version $version - treat as Juno": }
@@ -133,7 +133,7 @@ class scaleio_openstack::cinder (
       if $version_array[0] == '7' and $::os_brick_path {
         file { "/tmp/9e70f2c4.diff":
           source => "puppet:///modules/scaleio_openstack/liberty/cinder/9e70f2c4.diff",
-          require => File_from_source['scaleio driver for cinder']
+          require => Scaleio_openstack::File_from_source['scaleio driver for cinder']
         } ->
         exec { 'os-brick patch':
           onlyif => "test ${ensure} = present && patch -p 2 -i /tmp/9e70f2c4.diff -d ${::os_brick_path} -b -f --dry-run",

@@ -23,8 +23,8 @@ class scaleio_openstack::nova(
     Ini_setting <| |> ~> Service['nova-compute']
     Ini_subsetting <| |> ~> Service['nova-compute']
     File <| |> ~> Service['nova-compute']
-    File_from_source <| |> ~> Service['nova-compute']
-    Nova_common <| |> ~> Service['nova-compute']
+    Scaleio_openstack::File_from_source <| |> ~> Service['nova-compute']
+    Scaleio_openstack::Nova_common <| |> ~> Service['nova-compute']
 
     # Array of custom MOS versions, if a version is not in the array default patch will be applied,
     # in case of new custom mos patch it is needed to add its version into this table.
