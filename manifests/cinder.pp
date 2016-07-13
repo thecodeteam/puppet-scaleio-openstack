@@ -63,7 +63,14 @@ class scaleio_openstack::cinder (
         src_dir   => 'juno/cinder'
       } ->
 
-      patch_common { 'patch juno cinder conf': }
+      scaleio_openstack::patch_common { 'patch juno cinder conf': 
+        ensure                     => $ensure,
+        cinder_config_file         => $cinder_config_file,
+        scaleio_cinder_config_file => $scaleio_cinder_config_file,
+        provisioning_type          => $provisioning_type,
+        cinder_volume_service      => $cinder_volume_service,
+        enabled_backends           => $enabled_backends,
+      }
     }
     elsif $version_array[0] == '2015' and $version_array[1] == '1' {
       notify { "Detected cinder version $version - treat as Kilo": }
@@ -128,7 +135,14 @@ class scaleio_openstack::cinder (
         value   => 'cinder.volume.managers.emc.manager.EMCVolumeManager',
       } ->
 
-      patch_common { 'patch kilo cinder conf': }
+      scaleio_openstack::patch_common { 'patch kilo cinder conf':
+        ensure                     => $ensure,
+        cinder_config_file         => $cinder_config_file,
+        scaleio_cinder_config_file => $scaleio_cinder_config_file,
+        provisioning_type          => $provisioning_type,
+        cinder_volume_service      => $cinder_volume_service,
+        enabled_backends           => $enabled_backends,
+      }
     }
     elsif $version_array[0] == '7' or $version_array[0] == '8' {
       notify { "Detected cinder version $version - treat as Liberty/Mitaka": }
@@ -262,48 +276,54 @@ class scaleio_openstack::cinder (
       fail("Version ${version} isn't supported.")
     }
   }
+}
 
-  define patch_common(
-  ) {
-    $scaleio_provisioning_type = $scaleio_openstack::cinder::provisioning_type ? {
-      'thin'  => 'ThinProvisioned',
-      default => 'ThickProvisioned'
-    }
-
-    file { $scaleio_openstack::cinder::scaleio_cinder_config_file:
-      ensure  =>  $scaleio_openstack::cinder::ensure,
-      content => template('scaleio_openstack/cinder_scaleio.conf.erb'),
-    } ->
-    scaleio_openstack::scaleio_filter_file { 'cinder filter file':
-      ensure  => $scaleio_openstack::cinder::ensure,
-      service => 'cinder',
-      notify  => Service[$scaleio_openstack::cinder::cinder_volume_service]
-    } ->
-
-    ini_setting { 'enabled_backends':
-      path    => $scaleio_openstack::cinder::cinder_config_file,
-      section => 'DEFAULT',
-      setting => 'enabled_backends',
-      value   => $scaleio_openstack::cinder::enabled_backends,
-    } ->
-    ini_setting { 'volume_driver':
-      path    => $scaleio_openstack::cinder::cinder_config_file,
-      section => 'scaleio',
-      setting => 'volume_driver',
-      value   => 'cinder.volume.drivers.emc.scaleio.ScaleIODriver',
-    } ->
-    ini_setting { 'cinder_scaleio_config_file':
-      path    => $scaleio_openstack::cinder::cinder_config_file,
-      section => 'scaleio',
-      setting => 'cinder_scaleio_config_file',
-      value   => $scaleio_openstack::cinder::scaleio_cinder_config_file,
-    } ->
-    ini_setting { 'volume_backend_name':
-      path    => $scaleio_openstack::cinder::cinder_config_file,
-      section => 'scaleio',
-      setting => 'volume_backend_name',
-      value   => 'scaleio',
-    }
+define scaleio_openstack::patch_common(
+  $ensure                     = present,    # could be present or absent
+  $cinder_config_file         = undef,
+  $scaleio_cinder_config_file = undef,
+  $provisioning_type          = undef,
+  $cinder_volume_service      = undef,
+  $enabled_backends           = undef,
+) {
+  $scaleio_provisioning_type = $provisioning_type ? {
+    'thin'  => 'ThinProvisioned',
+    default => 'ThickProvisioned'
   }
-} # class scaleio::cinder
+
+  file { $scaleio_cinder_config_file:
+    ensure  => $ensure,
+    content => template('scaleio_openstack/cinder_scaleio.conf.erb'),
+  } ->
+  scaleio_openstack::scaleio_filter_file { 'cinder filter file':
+    ensure  => $ensure,
+    service => 'cinder',
+    notify  => Service[$cinder_volume_service]
+  } ->
+
+  ini_setting { 'enabled_backends':
+    path    => $cinder_config_file,
+    section => 'DEFAULT',
+    setting => 'enabled_backends',
+    value   => $enabled_backends,
+  } ->
+  ini_setting { 'volume_driver':
+    path    => $cinder_config_file,
+    section => 'scaleio',
+    setting => 'volume_driver',
+    value   => 'cinder.volume.drivers.emc.scaleio.ScaleIODriver',
+  } ->
+  ini_setting { 'cinder_scaleio_config_file':
+    path    => $cinder_config_file,
+    section => 'scaleio',
+    setting => 'cinder_scaleio_config_file',
+    value   => $scaleio_cinder_config_file,
+  } ->
+  ini_setting { 'volume_backend_name':
+    path    => $cinder_config_file,
+    section => 'scaleio',
+    setting => 'volume_backend_name',
+    value   => 'scaleio',
+  }
+}
 
