@@ -21,7 +21,7 @@ define scaleio_openstack::nova_common(
   file { "/tmp/${siolib_file}":
     source => "puppet:///modules/scaleio_openstack/${openstack_version}/${siolib_file}"
   } ->
-  package { ['python-pip']:
+  package { ['python-pip', 'patch']:
     ensure => present,
   } ->
 # Commented because it didn't work in Liberty deployment

@@ -12,19 +12,24 @@ class scaleio_openstack::nova(
 {
   notify {'Configuring Compute node for ScaleIO integration': }
 
+  $nova_compute_service = $::osfamily ? {
+    'RedHat' => 'openstack-nova-compute',
+    'Debian' => 'nova-compute',
+  }
+
   if ! $::nova_path {
     warning('Nova is not installed on this node')
   }
   else {
 
-    service { 'nova-compute':
+    service { $nova_compute_service:
       ensure => running,
     }
-    Ini_setting <| |> ~> Service['nova-compute']
-    Ini_subsetting <| |> ~> Service['nova-compute']
-    File <| |> ~> Service['nova-compute']
-    Scaleio_openstack::File_from_source <| |> ~> Service['nova-compute']
-    Scaleio_openstack::Nova_common <| |> ~> Service['nova-compute']
+    Ini_setting <| |> ~> Service[$nova_compute_service]
+    Ini_subsetting <| |> ~> Service[$nova_compute_service]
+    File <| |> ~> Service[$nova_compute_service]
+    Scaleio_openstack::File_from_source <| |> ~> Service[$nova_compute_service]
+    Scaleio_openstack::Nova_common <| |> ~> Service[$nova_compute_service]
 
     # Array of custom MOS versions, if a version is not in the array default patch will be applied,
     # in case of new custom mos patch it is needed to add its version into this table.

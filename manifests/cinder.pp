@@ -17,6 +17,11 @@ class scaleio_openstack::cinder (
 {
   notify {'Configure Cinder to use ScaleIO cluster': }
 
+  $cinder_volume_service = $::osfamily ? {
+    'RedHat' => 'openstack-cinder-volume',
+    'Debian' => 'cinder-volume',
+  }
+
   if ! $::cinder_path {
     warning('Cinder is not installed on this node')
   }
@@ -32,12 +37,15 @@ class scaleio_openstack::cinder (
     $version = $version_str[0]
     $version_array = split($version, '\.')
 
-    service { 'cinder-volume':
+    package { ['patch']:
+      ensure => present,
+    } ->
+    service { $cinder_volume_service:
       ensure => running
     }
-    Ini_setting <| |> ~> Service['cinder-volume']
-    File <| |> ~> Service['cinder-volume']
-    Scaleio_openstack::File_from_source <| |> ~> Service['cinder-volume']
+    Ini_setting <| |> ~> Service[$cinder_volume_service]
+    File <| |> ~> Service[$cinder_volume_service]
+    Scaleio_openstack::File_from_source <| |> ~> Service[$cinder_volume_service]
 
     if $version_array[0] == '2014' and $version_array[1] == '2' {
       notify { "Detected cinder version $version - treat as Juno": }
@@ -269,7 +277,7 @@ class scaleio_openstack::cinder (
     scaleio_openstack::scaleio_filter_file { 'cinder filter file':
       ensure  => $scaleio_openstack::cinder::ensure,
       service => 'cinder',
-      notify  => Service['cinder-volume']
+      notify  => Service[$scaleio_openstack::cinder::cinder_volume_service]
     } ->
 
     ini_setting { 'enabled_backends':
