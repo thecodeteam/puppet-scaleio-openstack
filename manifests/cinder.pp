@@ -151,10 +151,14 @@ class scaleio_openstack::cinder (
         'thin'  => 'True',
         default => 'False'
       }
+      $version_name = $version_array[0] ? {
+        '7' => 'liberty',
+        '8' => 'mitaka'
+      }
 
       if $version_array[0] == '7' and $::os_brick_path {
         file { "/tmp/9e70f2c4.diff":
-          source => "puppet:///modules/scaleio_openstack/liberty/cinder/9e70f2c4.diff",
+          source => "puppet:///modules/scaleio_openstack/${version_name}/cinder/9e70f2c4.diff",
           require => Scaleio_openstack::File_from_source['scaleio driver for cinder']
         } ->
         exec { 'os-brick patch':
@@ -179,7 +183,7 @@ class scaleio_openstack::cinder (
         ensure    => $ensure,
         dir       => "${::cinder_path}/volume/drivers/emc",
         file_name => 'scaleio_ext.py',
-        src_dir   => 'liberty/cinder'
+        src_dir   => "${version_name}/cinder"
       } ->
       ini_setting { 'enabled_backends':
         path    => $cinder_config_file,
