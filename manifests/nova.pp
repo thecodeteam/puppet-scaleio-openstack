@@ -53,9 +53,8 @@ class scaleio_openstack::nova(
       $version = $core_version
     }
 
-    $major_version = split($core_version, '\.')[0]
     notify { "Detected nova version: ${version}": }
-    if $major_version == '12' {
+    if $core_version in ['12.0.0', '12.0.1', '12.0.2', '12.0.3', '12.0.4'] {
       notify { "Detected nova version ${version} - treat as Liberty": }
 
       scaleio_openstack::nova_common { 'nova common for Liberty':
@@ -73,7 +72,7 @@ class scaleio_openstack::nova(
         nova_config_file => $nova_config_file,
       }
     }
-    elsif $major_version == '13' {
+    elsif $core_version in ['13.0.0'] {
       notify { "Detected nova version ${version} - treat as Mitaka": }
 
       scaleio_openstack::nova_common { 'nova common for Mitaka':
