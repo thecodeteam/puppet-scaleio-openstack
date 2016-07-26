@@ -53,7 +53,7 @@ class scaleio_openstack::nova(
       $version = $core_version
     }
 
-    major_version = split($core_version, '\.')[0]
+    $major_version = split($core_version, '\.')[0]
     notify { "Detected nova version: ${version}": }
     if $major_version == '12' {
       notify { "Detected nova version ${version} - treat as Liberty": }
