@@ -17,10 +17,10 @@ index 4e8f46e..4391ed4 100644
 +        """Create a new SIO image object"""
 +        super(SIOImage, self).__init__(FORMAT_RAW)
 diff --git a/nova/virt/libvirt/driver.py b/nova/virt/libvirt/driver.py
-index 7e99ba7..1cb785f 100644
+index 29aabc9..205dca6 100644
 --- a/nova/virt/libvirt/driver.py
 +++ b/nova/virt/libvirt/driver.py
-@@ -103,6 +103,7 @@ from nova.virt.libvirt import instancejobtracker
+@@ -105,6 +105,7 @@ from nova.virt.libvirt import instancejobtracker
  from nova.virt.libvirt.storage import dmcrypt
  from nova.virt.libvirt.storage import lvm
  from nova.virt.libvirt.storage import rbd_utils
@@ -28,16 +28,16 @@ index 7e99ba7..1cb785f 100644
  from nova.virt.libvirt import utils as libvirt_utils
  from nova.virt.libvirt import vif as libvirt_vif
  from nova.virt.libvirt.volume import remotefs
-@@ -911,6 +912,8 @@ class LibvirtDriver(driver.ComputeDriver):
+@@ -1126,6 +1127,8 @@ class LibvirtDriver(driver.ComputeDriver):
                  self._cleanup_lvm(instance, block_device_info)
              if CONF.libvirt.images_type == 'rbd':
                  self._cleanup_rbd(instance)
 +        if CONF.libvirt.images_type == 'sio':
 +            self._cleanup_sio(instance, destroy_disks)
  
-         if destroy_disks or (
-                 migrate_data and migrate_data.get('is_shared_block_storage',
-@@ -972,6 +975,10 @@ class LibvirtDriver(driver.ComputeDriver):
+         is_shared_block_storage = False
+         if migrate_data and 'is_shared_block_storage' in migrate_data:
+@@ -1188,6 +1191,10 @@ class LibvirtDriver(driver.ComputeDriver):
                  ceph_conf=CONF.libvirt.images_rbd_ceph_conf,
                  rbd_user=CONF.libvirt.rbd_user)
  
@@ -48,7 +48,7 @@ index 7e99ba7..1cb785f 100644
      def _cleanup_rbd(self, instance):
          LibvirtDriver._get_rbd_driver().cleanup_volumes(instance)
  
-@@ -1005,6 +1012,10 @@ class LibvirtDriver(driver.ComputeDriver):
+@@ -1221,6 +1228,10 @@ class LibvirtDriver(driver.ComputeDriver):
              return disks
          return []
  
@@ -59,7 +59,7 @@ index 7e99ba7..1cb785f 100644
      def get_volume_connector(self, instance):
          root_helper = utils.get_root_helper()
          return connector.get_connector_properties(
-@@ -1038,7 +1049,7 @@ class LibvirtDriver(driver.ComputeDriver):
+@@ -1254,7 +1265,7 @@ class LibvirtDriver(driver.ComputeDriver):
          # reasonably assumed that no such instances exist in the wild
          # anymore, it should be set back to False (the default) so it will
          # throw errors, like it should.
@@ -68,7 +68,7 @@ index 7e99ba7..1cb785f 100644
              backend.remove_snap(libvirt_utils.RESIZE_SNAPSHOT_NAME,
                                  ignore_errors=True)
  
-@@ -1046,6 +1057,7 @@ class LibvirtDriver(driver.ComputeDriver):
+@@ -1262,6 +1273,7 @@ class LibvirtDriver(driver.ComputeDriver):
              self._undefine_domain(instance)
              self.unplug_vifs(instance, network_info)
              self.unfilter_instance(instance, network_info)
@@ -76,7 +76,7 @@ index 7e99ba7..1cb785f 100644
  
      def _get_volume_driver(self, connection_info):
          driver_type = connection_info.get('driver_volume_type')
-@@ -1375,7 +1387,7 @@ class LibvirtDriver(driver.ComputeDriver):
+@@ -1616,7 +1628,7 @@ class LibvirtDriver(driver.ComputeDriver):
          image_format = CONF.libvirt.snapshot_image_format or source_type
  
          # NOTE(bfilippov): save lvm and rbd as raw
@@ -84,17 +84,17 @@ index 7e99ba7..1cb785f 100644
 +        if image_format in ('lvm', 'rbd', 'sio'):
              image_format = 'raw'
  
-         metadata = self._create_snapshot_metadata(image_meta,
-@@ -1398,7 +1410,7 @@ class LibvirtDriver(driver.ComputeDriver):
+         metadata = self._create_snapshot_metadata(instance.image_meta,
+@@ -1639,7 +1651,7 @@ class LibvirtDriver(driver.ComputeDriver):
          if (self._host.has_min_version(MIN_LIBVIRT_LIVESNAPSHOT_VERSION,
                                         MIN_QEMU_LIVESNAPSHOT_VERSION,
                                         host.HV_DRIVER_QEMU)
--             and source_type not in ('lvm', 'rbd')
-+             and source_type not in ('lvm', 'rbd', 'sio')
+-             and source_type not in ('lvm')
++             and source_type not in ('lvm', 'sio')
               and not CONF.ephemeral_storage_encryption.enabled
               and not CONF.workarounds.disable_libvirt_livesnapshot):
              live_snapshot = True
-@@ -4743,6 +4755,8 @@ class LibvirtDriver(driver.ComputeDriver):
+@@ -5005,6 +5017,8 @@ class LibvirtDriver(driver.ComputeDriver):
                                 CONF.libvirt.images_volume_group)
          elif CONF.libvirt.images_type == 'rbd':
              info = LibvirtDriver._get_rbd_driver().get_pool_info()
@@ -103,15 +103,15 @@ index 7e99ba7..1cb785f 100644
          else:
              info = libvirt_utils.get_fs_info(CONF.instances_path)
  
-@@ -5325,7 +5339,6 @@ class LibvirtDriver(driver.ComputeDriver):
-         """
-         if (CONF.libvirt.images_type == dest_check_data.get('image_type') and
+@@ -5604,7 +5618,6 @@ class LibvirtDriver(driver.ComputeDriver):
+         if (dest_check_data.obj_attr_is_set('image_type') and
+                 CONF.libvirt.images_type == dest_check_data.image_type and
                  self.image_backend.backend().is_shared_block_storage()):
 -            # NOTE(dgenin): currently true only for RBD image backend
              return True
  
-         if (dest_check_data.get('is_shared_instance_path') and
-@@ -6314,7 +6327,9 @@ class LibvirtDriver(driver.ComputeDriver):
+         if (dest_check_data.is_shared_instance_path and
+@@ -6660,7 +6673,9 @@ class LibvirtDriver(driver.ComputeDriver):
                  libvirt_utils.write_to_file(image_disk_info_path,
                                              jsonutils.dumps(image_disk_info))
  
@@ -122,7 +122,7 @@ index 7e99ba7..1cb785f 100644
                  # Ensure images and backing files are present.
                  LOG.debug('Checking to make sure images and backing files are '
                            'present before live migration.', instance=instance)
-@@ -6576,6 +6591,10 @@ class LibvirtDriver(driver.ComputeDriver):
+@@ -6934,6 +6949,10 @@ class LibvirtDriver(driver.ComputeDriver):
              disk_dev = vol['mount_device'].rpartition("/")[2]
              volume_devices.add(disk_dev)
  
@@ -133,7 +133,7 @@ index 7e99ba7..1cb785f 100644
          disk_info = []
          doc = etree.fromstring(xml)
          disk_nodes = doc.findall('.//devices/disk')
-@@ -6602,6 +6621,11 @@ class LibvirtDriver(driver.ComputeDriver):
+@@ -6960,6 +6979,11 @@ class LibvirtDriver(driver.ComputeDriver):
                            'volume', {'path': path, 'target': target})
                  continue
  
@@ -145,7 +145,7 @@ index 7e99ba7..1cb785f 100644
              # get the real disk size or
              # raise a localized error if image is unavailable
              if disk_type == 'file':
-@@ -6780,8 +6804,12 @@ class LibvirtDriver(driver.ComputeDriver):
+@@ -7169,8 +7193,12 @@ class LibvirtDriver(driver.ComputeDriver):
          ephemeral_down = flavor.ephemeral_gb < eph_size
          disk_info_text = self.get_instance_disk_info(
              instance, block_device_info=block_device_info)
@@ -160,7 +160,7 @@ index 7e99ba7..1cb785f 100644
          if (root_down and not booted_from_volume) or ephemeral_down:
              reason = _("Unable to resize disk down.")
              raise exception.InstanceFaultRollback(
-@@ -6815,8 +6843,6 @@ class LibvirtDriver(driver.ComputeDriver):
+@@ -7204,8 +7232,6 @@ class LibvirtDriver(driver.ComputeDriver):
  
          self.power_off(instance, timeout, retry_interval)
  
@@ -169,7 +169,7 @@ index 7e99ba7..1cb785f 100644
          for vol in block_device_mapping:
              connection_info = vol['connection_info']
              disk_dev = vol['mount_device'].rpartition("/")[2]
-@@ -7089,7 +7115,7 @@ class LibvirtDriver(driver.ComputeDriver):
+@@ -7474,7 +7500,7 @@ class LibvirtDriver(driver.ComputeDriver):
          # anymore, the try/except/finally should be removed,
          # and ignore_errors should be set back to False (the default) so
          # that problems throw errors, like they should.
@@ -179,7 +179,7 @@ index 7e99ba7..1cb785f 100644
                  backend.rollback_to_snap(libvirt_utils.RESIZE_SNAPSHOT_NAME)
              except exception.SnapshotNotFound:
 diff --git a/nova/virt/libvirt/imagebackend.py b/nova/virt/libvirt/imagebackend.py
-index 558fe82..52af225 100644
+index b5ca2ae..f69787f 100644
 --- a/nova/virt/libvirt/imagebackend.py
 +++ b/nova/virt/libvirt/imagebackend.py
 @@ -29,6 +29,7 @@ from oslo_utils import strutils
@@ -187,10 +187,10 @@ index 558fe82..52af225 100644
  import six
  
 +from nova.compute import task_states
+ import nova.conf
  from nova import exception
  from nova.i18n import _
- from nova.i18n import _LE, _LI
-@@ -42,12 +43,14 @@ from nova.virt.libvirt import config as vconfig
+@@ -43,12 +44,14 @@ from nova.virt.libvirt import config as vconfig
  from nova.virt.libvirt.storage import dmcrypt
  from nova.virt.libvirt.storage import lvm
  from nova.virt.libvirt.storage import rbd_utils
@@ -206,7 +206,7 @@ index 558fe82..52af225 100644
                 help='VM Images format. If default is specified, then'
                      ' use_cow_images flag is used instead of this one.'),
      cfg.StrOpt('images_volume_group',
-@@ -433,6 +436,24 @@ class Image(object):
+@@ -467,6 +470,24 @@ class Image(object):
          """
          pass
  
@@ -231,8 +231,8 @@ index 558fe82..52af225 100644
  
  class Raw(Image):
      def __init__(self, instance=None, disk_name=None, path=None):
-@@ -936,6 +957,115 @@ class Ploop(Image):
-             create_ploop_image(base, self.path, size)
+@@ -1104,6 +1125,118 @@ class Ploop(Image):
+                                        out_format)
  
  
 +class Sio(Image):
@@ -305,6 +305,9 @@ index 558fe82..52af225 100644
 +            self.path = self.driver.map_volume(self.volume_name)
 +            self.driver.import_image(base, self.path)
 +
++    def resize_image(self, size):
++        pass
++
 +    def get_disk_size(self, name):
 +        return self.driver.get_volume_size(self.volume_name)
 +
@@ -347,7 +350,7 @@ index 558fe82..52af225 100644
  class Backend(object):
      def __init__(self, use_cow):
          self.BACKEND = {
-@@ -944,7 +1074,8 @@ class Backend(object):
+@@ -1112,7 +1245,8 @@ class Backend(object):
              'lvm': Lvm,
              'rbd': Rbd,
              'ploop': Ploop,
@@ -768,13 +771,15 @@ index 0000000..aeef0a8
 +            else:
 +                self.remove_volume(volume, ignore_mappings=True)
 diff --git a/nova/virt/libvirt/utils.py b/nova/virt/libvirt/utils.py
-index 422c7a0..607bbd7 100644
+index 1925cda..134b6c9 100644
 --- a/nova/virt/libvirt/utils.py
 +++ b/nova/virt/libvirt/utils.py
-@@ -374,6 +374,8 @@ def find_disk(virt_dom):
+@@ -391,7 +391,9 @@ def find_disk(virt_dom):
+ 
  
  def get_disk_type_from_path(path):
-     """Retrieve disk type (raw, qcow2, lvm) for given file."""
+-    """Retrieve disk type (raw, qcow2, lvm, ploop) for given file."""
++    """Retrieve disk type (raw, qcow2, lvm, etc) for given file."""
 +    if path.startswith('/dev/disk/by-id/emc-vol'):
 +        return 'sio'
      if path.startswith('/dev'):
