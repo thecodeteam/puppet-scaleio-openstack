@@ -17,7 +17,7 @@ index 4e8f46e..4391ed4 100644
 +        """Create a new SIO image object"""
 +        super(SIOImage, self).__init__(FORMAT_RAW)
 diff --git a/nova/virt/libvirt/driver.py b/nova/virt/libvirt/driver.py
-index 3dce659..cbefd8a 100644
+index 0056bcc..44d0ec7 100644
 --- a/nova/virt/libvirt/driver.py
 +++ b/nova/virt/libvirt/driver.py
 @@ -105,6 +105,7 @@ from nova.virt.libvirt import instancejobtracker
@@ -28,7 +28,7 @@ index 3dce659..cbefd8a 100644
  from nova.virt.libvirt import utils as libvirt_utils
  from nova.virt.libvirt import vif as libvirt_vif
  from nova.virt.libvirt.volume import remotefs
-@@ -1126,6 +1127,8 @@ class LibvirtDriver(driver.ComputeDriver):
+@@ -1142,6 +1143,8 @@ class LibvirtDriver(driver.ComputeDriver):
                  self._cleanup_lvm(instance, block_device_info)
              if CONF.libvirt.images_type == 'rbd':
                  self._cleanup_rbd(instance)
@@ -37,7 +37,7 @@ index 3dce659..cbefd8a 100644
  
          is_shared_block_storage = False
          if migrate_data and 'is_shared_block_storage' in migrate_data:
-@@ -1188,6 +1191,10 @@ class LibvirtDriver(driver.ComputeDriver):
+@@ -1204,6 +1207,10 @@ class LibvirtDriver(driver.ComputeDriver):
                  ceph_conf=CONF.libvirt.images_rbd_ceph_conf,
                  rbd_user=CONF.libvirt.rbd_user)
  
@@ -48,7 +48,7 @@ index 3dce659..cbefd8a 100644
      def _cleanup_rbd(self, instance):
          LibvirtDriver._get_rbd_driver().cleanup_volumes(instance)
  
-@@ -1221,6 +1228,10 @@ class LibvirtDriver(driver.ComputeDriver):
+@@ -1237,6 +1244,10 @@ class LibvirtDriver(driver.ComputeDriver):
              return disks
          return []
  
@@ -59,7 +59,16 @@ index 3dce659..cbefd8a 100644
      def get_volume_connector(self, instance):
          root_helper = utils.get_root_helper()
          return connector.get_connector_properties(
-@@ -1261,6 +1272,7 @@ class LibvirtDriver(driver.ComputeDriver):
+@@ -1270,7 +1281,7 @@ class LibvirtDriver(driver.ComputeDriver):
+         # reasonably assumed that no such instances exist in the wild
+         # anymore, it should be set back to False (the default) so it will
+         # throw errors, like it should.
+-        if backend.check_image_exists():
++        if CONF.libvirt.images_type != 'rbd' or backend.check_image_exists():
+             backend.remove_snap(libvirt_utils.RESIZE_SNAPSHOT_NAME,
+                                 ignore_errors=True)
+ 
+@@ -1278,6 +1289,7 @@ class LibvirtDriver(driver.ComputeDriver):
              self._undefine_domain(instance)
              self.unplug_vifs(instance, network_info)
              self.unfilter_instance(instance, network_info)
@@ -67,7 +76,7 @@ index 3dce659..cbefd8a 100644
  
      def _get_volume_driver(self, connection_info):
          driver_type = connection_info.get('driver_volume_type')
-@@ -1615,7 +1627,7 @@ class LibvirtDriver(driver.ComputeDriver):
+@@ -1632,7 +1644,7 @@ class LibvirtDriver(driver.ComputeDriver):
          image_format = CONF.libvirt.snapshot_image_format or source_type
  
          # NOTE(bfilippov): save lvm and rbd as raw
@@ -76,16 +85,16 @@ index 3dce659..cbefd8a 100644
              image_format = 'raw'
  
          metadata = self._create_snapshot_metadata(instance.image_meta,
-@@ -1638,7 +1650,7 @@ class LibvirtDriver(driver.ComputeDriver):
+@@ -1655,7 +1667,7 @@ class LibvirtDriver(driver.ComputeDriver):
          if (self._host.has_min_version(MIN_LIBVIRT_LIVESNAPSHOT_VERSION,
                                         MIN_QEMU_LIVESNAPSHOT_VERSION,
                                         host.HV_DRIVER_QEMU)
--             and source_type not in ('lvm', 'rbd')
-+             and source_type not in ('lvm', 'rbd', 'sio')
+-             and source_type not in ('lvm')
++             and source_type not in ('lvm', 'sio')
               and not CONF.ephemeral_storage_encryption.enabled
               and not CONF.workarounds.disable_libvirt_livesnapshot):
              live_snapshot = True
-@@ -4984,6 +4996,8 @@ class LibvirtDriver(driver.ComputeDriver):
+@@ -5018,6 +5030,8 @@ class LibvirtDriver(driver.ComputeDriver):
                                 CONF.libvirt.images_volume_group)
          elif CONF.libvirt.images_type == 'rbd':
              info = LibvirtDriver._get_rbd_driver().get_pool_info()
@@ -94,7 +103,7 @@ index 3dce659..cbefd8a 100644
          else:
              info = libvirt_utils.get_fs_info(CONF.instances_path)
  
-@@ -5583,7 +5597,6 @@ class LibvirtDriver(driver.ComputeDriver):
+@@ -5617,7 +5631,6 @@ class LibvirtDriver(driver.ComputeDriver):
          if (dest_check_data.obj_attr_is_set('image_type') and
                  CONF.libvirt.images_type == dest_check_data.image_type and
                  self.image_backend.backend().is_shared_block_storage()):
@@ -102,7 +111,7 @@ index 3dce659..cbefd8a 100644
              return True
  
          if (dest_check_data.is_shared_instance_path and
-@@ -6634,7 +6647,9 @@ class LibvirtDriver(driver.ComputeDriver):
+@@ -6673,7 +6686,9 @@ class LibvirtDriver(driver.ComputeDriver):
                  libvirt_utils.write_to_file(image_disk_info_path,
                                              jsonutils.dumps(image_disk_info))
  
@@ -113,7 +122,7 @@ index 3dce659..cbefd8a 100644
                  # Ensure images and backing files are present.
                  LOG.debug('Checking to make sure images and backing files are '
                            'present before live migration.', instance=instance)
-@@ -6908,6 +6923,10 @@ class LibvirtDriver(driver.ComputeDriver):
+@@ -6952,6 +6967,10 @@ class LibvirtDriver(driver.ComputeDriver):
              disk_dev = vol['mount_device'].rpartition("/")[2]
              volume_devices.add(disk_dev)
  
@@ -124,7 +133,7 @@ index 3dce659..cbefd8a 100644
          disk_info = []
          doc = etree.fromstring(xml)
          disk_nodes = doc.findall('.//devices/disk')
-@@ -6934,6 +6953,11 @@ class LibvirtDriver(driver.ComputeDriver):
+@@ -6978,6 +6997,11 @@ class LibvirtDriver(driver.ComputeDriver):
                            'volume', {'path': path, 'target': target})
                  continue
  
@@ -136,7 +145,7 @@ index 3dce659..cbefd8a 100644
              # get the real disk size or
              # raise a localized error if image is unavailable
              if disk_type == 'file':
-@@ -7143,8 +7167,12 @@ class LibvirtDriver(driver.ComputeDriver):
+@@ -7187,8 +7211,12 @@ class LibvirtDriver(driver.ComputeDriver):
          ephemeral_down = flavor.ephemeral_gb < eph_size
          disk_info_text = self.get_instance_disk_info(
              instance, block_device_info=block_device_info)
@@ -151,7 +160,7 @@ index 3dce659..cbefd8a 100644
          if (root_down and not booted_from_volume) or ephemeral_down:
              reason = _("Unable to resize disk down.")
              raise exception.InstanceFaultRollback(
-@@ -7178,8 +7206,6 @@ class LibvirtDriver(driver.ComputeDriver):
+@@ -7222,8 +7250,6 @@ class LibvirtDriver(driver.ComputeDriver):
  
          self.power_off(instance, timeout, retry_interval)
  
@@ -160,6 +169,15 @@ index 3dce659..cbefd8a 100644
          for vol in block_device_mapping:
              connection_info = vol['connection_info']
              disk_dev = vol['mount_device'].rpartition("/")[2]
+@@ -7492,7 +7518,7 @@ class LibvirtDriver(driver.ComputeDriver):
+         # anymore, the try/except/finally should be removed,
+         # and ignore_errors should be set back to False (the default) so
+         # that problems throw errors, like they should.
+-        if backend.check_image_exists():
++        if CONF.libvirt.images_type != 'rbd' or backend.check_image_exists():
+             try:
+                 backend.rollback_to_snap(libvirt_utils.RESIZE_SNAPSHOT_NAME)
+             except exception.SnapshotNotFound:
 diff --git a/nova/virt/libvirt/imagebackend.py b/nova/virt/libvirt/imagebackend.py
 index b5ca2ae..f69787f 100644
 --- a/nova/virt/libvirt/imagebackend.py
