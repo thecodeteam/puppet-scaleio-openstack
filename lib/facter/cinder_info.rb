@@ -52,7 +52,7 @@ if Facter.value(:cinder_version)
         end
         api_version = section['auth_version']
         if not api_version
-          resp  = Facter::Util::Resolution.exec( "curl -k --basic --connect-timeout 10 %s" % uri)
+          resp  = Facter::Util::Resolution.exec( "curl -k -s --basic --connect-timeout 10 %s" % uri)
           if resp
             spec = JSON.parse(resp)
             if spec and spec['versions'] and spec['versions']['values']

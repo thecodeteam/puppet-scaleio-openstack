@@ -48,14 +48,8 @@ class scaleio_openstack::cinder (
     Scaleio_openstack::File_from_source <| |> ~> Service[$cinder_volume_service]
 
     if $version_array[0] == '2014' and $version_array[1] == '2' {
-      notify { "Detected cinder version $version - treat as Juno": }
+      notify { "Detected cinder version ${version} - treat as Juno": }
 
-      file { "Ensure directory has access: /bin/emc/scaleio":
-        ensure  => directory,
-        path    => '/bin/emc/scaleio',
-        recurse => true,
-        mode  => '0755',
-      } ->
       scaleio_openstack::file_from_source {'scaleio driver for cinder':
         ensure    => $ensure,
         dir       => "${::cinder_path}/volume/drivers/emc",
@@ -73,14 +67,8 @@ class scaleio_openstack::cinder (
       }
     }
     elsif $version_array[0] == '2015' and $version_array[1] == '1' {
-      notify { "Detected cinder version $version - treat as Kilo": }
+      notify { "Detected cinder version ${version} - treat as Kilo": }
 
-      file { "Ensure directory has access: /bin/emc/scaleio":
-        ensure  => directory,
-        path    => '/bin/emc/scaleio',
-        recurse => true,
-        mode  => '0755',
-      } ->
       file { "Ensure managers directory present: ":
         ensure  => directory,
         path    => "${::cinder_path}/volume/managers",
@@ -145,7 +133,7 @@ class scaleio_openstack::cinder (
       }
     }
     elsif $version_array[0] == '7' or $version_array[0] == '8' {
-      notify { "Detected cinder version $version - treat as Liberty/Mitaka": }
+      notify { "Detected cinder version ${version} - treat as Liberty/Mitaka": }
 
       $san_thin_provision = $provisioning_type ? {
         'thin'  => 'True',
@@ -173,12 +161,6 @@ class scaleio_openstack::cinder (
         }
       }
 
-      file { "Ensure directory has access: /bin/emc/scaleio":
-        ensure  => directory,
-        path    => '/bin/emc/scaleio',
-        recurse => true,
-        mode  => '0755',
-      } ->
       scaleio_openstack::file_from_source {'scaleio driver for cinder':
         ensure    => $ensure,
         dir       => "${::cinder_path}/volume/drivers/emc",

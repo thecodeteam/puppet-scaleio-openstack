@@ -1,0 +1,9 @@
+# glance-rootwrap command filters for volume nodes
+# This file should be owned by (and only-writeable by) the root user
+
+[Filters]
+# glance_store/_drivers/cinder.py: temporary_chown(path)
+chown: CommandFilter, chown, root
+
+# initiator/connector.py:
+drv_cfg: CommandFilter, /bin/emc/scaleio/drv_cfg, root, /bin/emc/scaleio/drv_cfg, --query_guid
