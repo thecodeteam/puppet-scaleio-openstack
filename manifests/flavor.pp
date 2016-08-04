@@ -6,9 +6,9 @@
 
 
 define scaleio_openstack::flavor(
-  $ensure             = present,  #
-  $name,                          # name of flavor to be created, could be name:something if needed to remove/delete
+  $flavor_name,                   # name of flavor to be created, could be name:something if needed to remove/delete
                                   # flavor for edit purposes
+  $ensure             = present,  #
   $storage_pool       = undef,    # name of storage pool to use for the flavor
   $id                 = 'auto',   # unique ID of the new flavor.
   $ram_size           = undef,    # memory size in MB
@@ -60,11 +60,9 @@ define scaleio_openstack::flavor(
     undef     => '',
     default   => "--is-public ${is_public}"
   }
-  $parsed_name = split($name, ':')
+  $parsed_name = split($flavor_name, ':')
   if count($parsed_name) > 1 {
     $flavor_name = $parsed_name[0]
-  } else {
-    $flavor_name = $name
   }
   $flavor_opts = "${ephemeral_disk_opts} ${swap_disk_opts} ${rxtx_factor_opts} ${is_public_opts}"
   $check_cmd = "nova flavor-list | grep -q '${flavor_name}'"

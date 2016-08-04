@@ -1,8 +1,8 @@
 # Define for creation of volume types for ScaleIO
 #
 define scaleio_openstack::volume_type(
+  $type_name,                     # name of volume type to be created
   $ensure             = present,  #
-  $name,                          # name of volume type to be created
   $protection_domain  = undef,    # name of protection domain to tie with volume type
   $storage_pool       = undef,    # name of storage pool to tie with volume type
   $provisioning       = 'thick',  # type of provisioning, 'thin' / 'thick' 
@@ -27,11 +27,11 @@ define scaleio_openstack::volume_type(
   Exec {
     environment => $environment
   }
-  $check_cmd = "cinder type-list | grep -q '${name}'"
-  $volume_type_ensure_name = "ScaleIO Cinder Volume Type ${name} ${ensure}"
+  $check_cmd = "cinder type-list | grep -q '${type_name}'"
+  $volume_type_ensure_name = "ScaleIO Cinder Volume Type ${type_name} ${ensure}"
   if $ensure == present {
     exec {$volume_type_ensure_name:
-      command => "cinder type-create ${name}",
+      command => "cinder type-create ${type_name}",
       path    => ['/usr/bin', '/bin'],
       unless  => $check_cmd,
     }
@@ -49,8 +49,8 @@ define scaleio_openstack::volume_type(
     }
     $volume_type_opts = "${pd_opts} ${sp_opts} ${provisioning_opts}"
     if $volume_type_opts != '  ' {
-      exec {"ScaleIO Cinder Volume Type ${name} Options ${volume_type_opts}":
-        command => "cinder type-key '${name}' set ${volume_type_opts}",
+      exec {"ScaleIO Cinder Volume Type ${type_name} Options ${volume_type_opts}":
+        command => "cinder type-key '${type_name}' set ${volume_type_opts}",
         path    => ['/usr/bin', '/bin'],
         onlyif  => $check_cmd,
         require => Exec[$volume_type_ensure_name],
@@ -58,7 +58,7 @@ define scaleio_openstack::volume_type(
     }
   } else {
     exec {$volume_type_ensure_name:
-      command => "cinder type-delete '${name}'",
+      command => "cinder type-delete '${type_name}'",
       path    => ['/usr/bin', '/bin'],
       onlyif  => $check_cmd,
     }

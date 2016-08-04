@@ -29,7 +29,7 @@ class scaleio_openstack::cinder (
     $domains = split($protection_domains,',')
     $pools = split($storage_pools,',')
     $pools_list = regsubst(join(flatten(zip($domains, $pools)), ':'), '(\w+):(\w+):', '\1:\2,', 'G')
-    $enabled_backends = $ensure ? { absent  => $default_lvm_backend, default => 'scaleio' }
+    $enabled_backends = $ensure ? { 'absent' => $default_lvm_backend, default => 'scaleio' }
     $default_protection_domain = $domains[0]
     $default_storage_pool = $pools[0]
 
