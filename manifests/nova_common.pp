@@ -60,6 +60,11 @@ define scaleio_openstack::nova_common(
     path => '/bin:/usr/bin',
   } ->
 
+  ini_setting { 'scaleio_nova_compute_config force_config_drive':
+    section => 'DEFAULT',
+    setting => 'force_config_drive',
+    value   => 'False',
+  } ->
   ini_setting { 'scaleio_nova_compute_config images_type':
     section => 'libvirt',
     setting => 'images_type',
