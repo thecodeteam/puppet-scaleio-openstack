@@ -6,13 +6,6 @@ group :development, :test do
   gem 'puppetlabs_spec_helper',                 :require => false
   gem 'rspec-puppet',                           :require => false
   gem 'beaker-rspec',                           :require => false
-  gem 'puppet-openstack_spec_helper',
-      :git => 'https://git.openstack.org/openstack/puppet-openstack_spec_helper',
-      :require => false
-  gem 'json',                                   :require => false
-  gem 'minitest',                               :require => false
-  gem 'test',                                   :require => false
-  gem 'test-unit',                              :require => false
 end
 
 if puppetversion = ENV['PUPPET_GEM_VERSION']
