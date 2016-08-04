@@ -1,9 +1,11 @@
 source 'https://rubygems.org'
 
+gem 'json_pure', '<2.0.2'
+
 group :development, :test do
   gem 'puppetlabs_spec_helper',                 :require => false
-  gem 'rspec-puppet',  	                        :require => false
-  gem 'beaker-rspec', 				:require => false
+  gem 'rspec-puppet',                           :require => false
+  gem 'beaker-rspec',                           :require => false
   gem 'puppet-openstack_spec_helper',
       :git => 'https://git.openstack.org/openstack/puppet-openstack_spec_helper',
       :require => false
