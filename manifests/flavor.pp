@@ -71,9 +71,9 @@ define scaleio_openstack::flavor(
   $flavor_resource_name = "ScaleIO nova flavor ${flavor_name} ${ensure}"
   if $ensure == present {
     exec {$flavor_resource_name:
-      command     => "nova flavor-create ${flavor_opts} ${flavor_name} ${id} ${ram_size} ${disk_size} ${vcpus}",
-      path        => ['/usr/bin', '/bin'],
-      unless      => $check_cmd,
+      command => "nova flavor-create ${flavor_opts} ${flavor_name} ${id} ${ram_size} ${disk_size} ${vcpus}",
+      path    => ['/usr/bin', '/bin'],
+      unless  => $check_cmd,
     }
     $sp_opts = $storage_pool ? {
       undef   => '',
@@ -94,9 +94,9 @@ define scaleio_openstack::flavor(
     }
   } else {
     exec {$flavor_resource_name:
-      command     => "nova flavor-delete '${flavor_name}'",
-      path        => ['/usr/bin', '/bin'],
-      onlyif      => $check_cmd,
+      command => "nova flavor-delete '${flavor_name}'",
+      path    => ['/usr/bin', '/bin'],
+      onlyif  => $check_cmd,
     }
   }
 }

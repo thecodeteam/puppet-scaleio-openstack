@@ -8,8 +8,8 @@ define scaleio_openstack::file_from_source(
   file { "${dir}/${file_name}":
     ensure => $ensure,
     source => "puppet:///modules/scaleio_openstack/${src_dir}/${file_name}",
-    mode  => '0644',
-    owner => 'root',
-    group => 'root',
+    mode   => '0644',
+    owner  => 'root',
+    group  => 'root',
   }
 }

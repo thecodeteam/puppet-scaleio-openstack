@@ -57,7 +57,7 @@ class scaleio_openstack::cinder (
         src_dir   => 'juno/cinder'
       } ->
 
-      scaleio_openstack::patch_common { 'patch juno cinder conf': 
+      scaleio_openstack::patch_common { 'patch juno cinder conf':
         ensure                     => $ensure,
         cinder_config_file         => $cinder_config_file,
         scaleio_cinder_config_file => $scaleio_cinder_config_file,
@@ -69,15 +69,15 @@ class scaleio_openstack::cinder (
     elsif $version_array[0] == '2015' and $version_array[1] == '1' {
       notify { "Detected cinder version ${version} - treat as Kilo": }
 
-      file { "Ensure managers directory present: ":
-        ensure  => directory,
-        path    => "${::cinder_path}/volume/managers",
-        mode    => '0755',
+      file { 'Ensure managers directory present: ':
+        ensure => directory,
+        path   => "${::cinder_path}/volume/managers",
+        mode   => '0755',
       } ->
-      file { "Ensure emc directory present: ":
-        ensure  => directory,
-        path    => "${::cinder_path}/volume/managers/emc",
-        mode    => '0755',
+      file { 'Ensure emc directory present: ':
+        ensure => directory,
+        path   => "${::cinder_path}/volume/managers/emc",
+        mode   => '0755',
       } ->
       scaleio_openstack::file_from_source {'scaleio driver for cinder file 001':
         ensure    => $ensure,
@@ -145,19 +145,19 @@ class scaleio_openstack::cinder (
       }
 
       if $version_array[0] == '7' and $::os_brick_path {
-        file { "/tmp/9e70f2c4.diff":
-          source => "puppet:///modules/scaleio_openstack/${version_name}/cinder/9e70f2c4.diff",
+        file { '/tmp/9e70f2c4.diff':
+          source  => "puppet:///modules/scaleio_openstack/${version_name}/cinder/9e70f2c4.diff",
           require => Scaleio_openstack::File_from_source['scaleio driver for cinder']
         } ->
         exec { 'os-brick patch':
-          onlyif => "test ${ensure} = present && patch -p 2 -i /tmp/9e70f2c4.diff -d ${::os_brick_path} -b -f --dry-run",
+          onlyif  => "test ${ensure} = present && patch -p 2 -i /tmp/9e70f2c4.diff -d ${::os_brick_path} -b -f --dry-run",
           command => "patch -p 2 -i /tmp/9e70f2c4.diff -d ${::os_brick_path} -b",
-          path => '/bin:/usr/bin',
+          path    => '/bin:/usr/bin',
         } ->
         exec { 'os-brick un-patch':
-          onlyif => "test ${ensure} = absent && patch -p 2 -i /tmp/9e70f2c4.diff -d ${::os_brick_path} -b -R -f --dry-run",
+          onlyif  => "test ${ensure} = absent && patch -p 2 -i /tmp/9e70f2c4.diff -d ${::os_brick_path} -b -R -f --dry-run",
           command => "patch -p 2 -i /tmp/9e70f2c4.diff -d ${::os_brick_path} -b -R",
-          path => '/bin:/usr/bin',
+          path    => '/bin:/usr/bin',
         }
       }
 

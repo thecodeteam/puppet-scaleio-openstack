@@ -32,32 +32,32 @@ define scaleio_openstack::nova_common(
 #  } ->
   exec {'siolib':
     command => "pip install /tmp/${siolib_file}",
-    path => '/bin:/usr/bin:/usr/local/bin'
+    path    => '/bin:/usr/bin:/usr/local/bin'
   }->
 
   scaleio_openstack::scaleio_filter_file { 'nova filter file':
-    ensure  => $ensure,
-    service => 'nova',
+    ensure            => $ensure,
+    service           => 'nova',
     openstack_version => $openstack_version,
   } ->
-  file { "Ensure directory has access: /bin/emc/scaleio":
+  file { 'Ensure directory has access: /bin/emc/scaleio':
     ensure  => directory,
     path    => '/bin/emc/scaleio',
     recurse => true,
-    mode  => '0755',
+    mode    => '0755',
   } ->
   file { "/tmp/${nova_patch}":
     source => "puppet:///modules/scaleio_openstack/${openstack_version}/nova/${nova_patch}"
   } ->
   exec { 'nova patch':
-    onlyif => "test ${ensure} = present && patch -p 2 -i /tmp/${nova_patch} -d ${::nova_path} -b -f --dry-run",
+    onlyif  => "test ${ensure} = present && patch -p 2 -i /tmp/${nova_patch} -d ${::nova_path} -b -f --dry-run",
     command => "patch -p 2 -i /tmp/${nova_patch} -d ${::nova_path} -b",
-    path => '/bin:/usr/bin',
+    path    => '/bin:/usr/bin',
   } ->
   exec { 'nova un-patch':
-    onlyif => "test ${ensure} = absent && patch -p 2 -i /tmp/${nova_patch} -d ${::nova_path} -b -R -f --dry-run",
+    onlyif  => "test ${ensure} = absent && patch -p 2 -i /tmp/${nova_patch} -d ${::nova_path} -b -R -f --dry-run",
     command => "patch -p 2 -i /tmp/${nova_patch} -d ${::nova_path} -b -R",
-    path => '/bin:/usr/bin',
+    path    => '/bin:/usr/bin',
   } ->
 
   ini_setting { 'scaleio_nova_compute_config force_config_drive':

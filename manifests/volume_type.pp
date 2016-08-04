@@ -31,9 +31,9 @@ define scaleio_openstack::volume_type(
   $volume_type_ensure_name = "ScaleIO Cinder Volume Type ${name} ${ensure}"
   if $ensure == present {
     exec {$volume_type_ensure_name:
-      command     => "cinder type-create ${name}",
-      path        => ['/usr/bin', '/bin'],
-      unless      => $check_cmd,
+      command => "cinder type-create ${name}",
+      path    => ['/usr/bin', '/bin'],
+      unless  => $check_cmd,
     }
     $pd_opts = $protection_domain ? {
       undef   => '',
@@ -58,9 +58,9 @@ define scaleio_openstack::volume_type(
     }
   } else {
     exec {$volume_type_ensure_name:
-      command     => "cinder type-delete '${name}'",
-      path        => ['/usr/bin', '/bin'],
-      onlyif      => $check_cmd,
+      command => "cinder type-delete '${name}'",
+      path    => ['/usr/bin', '/bin'],
+      onlyif  => $check_cmd,
     }
   }
 }

@@ -58,59 +58,59 @@ class scaleio_openstack::nova(
       notify { "Detected nova version ${version} - treat as Liberty": }
 
       scaleio_openstack::nova_common { 'nova common for Liberty':
-        ensure => $ensure,
-        gateway_user => $gateway_user,
-        gateway_password => $gateway_password,
-        gateway_ip => $gateway_ip,
-        gateway_port => $gateway_port,
+        ensure             => $ensure,
+        gateway_user       => $gateway_user,
+        gateway_password   => $gateway_password,
+        gateway_ip         => $gateway_ip,
+        gateway_port       => $gateway_port,
         protection_domains => $protection_domains,
-        storage_pools => $storage_pools,
-        provisioning_type => $provisioning_type,
-        openstack_version => 'liberty',
-        siolib_file => 'siolib-1.4.5.tar.gz',
-        nova_patch => "${version}.diff",
-        nova_config_file => $nova_config_file,
+        storage_pools      => $storage_pools,
+        provisioning_type  => $provisioning_type,
+        openstack_version  => 'liberty',
+        siolib_file        => 'siolib-1.4.5.tar.gz',
+        nova_patch         => "${version}.diff",
+        nova_config_file   => $nova_config_file,
       }
     }
     elsif $core_version in ['13.0.0'] {
       notify { "Detected nova version ${version} - treat as Mitaka": }
 
       scaleio_openstack::nova_common { 'nova common for Mitaka':
-        ensure => $ensure,
-        gateway_user => $gateway_user,
-        gateway_password => $gateway_password,
-        gateway_ip => $gateway_ip,
-        gateway_port => $gateway_port,
+        ensure             => $ensure,
+        gateway_user       => $gateway_user,
+        gateway_password   => $gateway_password,
+        gateway_ip         => $gateway_ip,
+        gateway_port       => $gateway_port,
         protection_domains => $protection_domains,
-        storage_pools => $storage_pools,
-        provisioning_type => $provisioning_type,
-        openstack_version => 'mitaka',
-        siolib_file => 'siolib-1.4.5.tar.gz',
-        nova_patch => "${version}.diff",
-        nova_config_file => $nova_config_file,
+        storage_pools      => $storage_pools,
+        provisioning_type  => $provisioning_type,
+        openstack_version  => 'mitaka',
+        siolib_file        => 'siolib-1.4.5.tar.gz',
+        nova_patch         => "${version}.diff",
+        nova_config_file   => $nova_config_file,
       }
     }
     elsif $core_version in ['2015.1.1', '2015.1.2', '2015.1.3', '2015.1.4']  {
       notify { "Detected nova version ${version} - treat as Kilo": }
 
       scaleio_openstack::nova_common { 'nova common for Kilo':
-        ensure => $ensure,
-        gateway_user => $gateway_user,
-        gateway_password => $gateway_password,
-        gateway_ip => $gateway_ip,
-        gateway_port => $gateway_port,
+        ensure             => $ensure,
+        gateway_user       => $gateway_user,
+        gateway_password   => $gateway_password,
+        gateway_ip         => $gateway_ip,
+        gateway_port       => $gateway_port,
         protection_domains => $protection_domains,
-        storage_pools => $storage_pools,
-        provisioning_type => $provisioning_type,
-        openstack_version => 'kilo',
-        siolib_file => 'siolib-1.3.5.tar.gz',
-        nova_patch => "${version}.diff",
-        nova_config_file => $nova_config_file,
+        storage_pools      => $storage_pools,
+        provisioning_type  => $provisioning_type,
+        openstack_version  => 'kilo',
+        siolib_file        => 'siolib-1.3.5.tar.gz',
+        nova_patch         => "${version}.diff",
+        nova_config_file   => $nova_config_file,
       } ->
 
       file { ["${::nova_path}/virt/libvirt/drivers", "${::nova_path}/virt/libvirt/drivers/emc"]:
-        ensure  => directory,
-        mode    => '0755',
+        ensure => directory,
+        mode   => '0755',
       } ->
       scaleio_openstack::file_from_source {'scaleio driver for nova file 001':
         ensure    => $ensure,
@@ -135,18 +135,18 @@ class scaleio_openstack::nova(
       notify { "Detected nova version ${version} - treat as Juno": }
 
       scaleio_openstack::nova_common { 'nova common for Juno':
-        ensure => $ensure,
-        gateway_user => $gateway_user,
-        gateway_password => $gateway_password,
-        gateway_ip => $gateway_ip,
-        gateway_port => $gateway_port,
+        ensure             => $ensure,
+        gateway_user       => $gateway_user,
+        gateway_password   => $gateway_password,
+        gateway_ip         => $gateway_ip,
+        gateway_port       => $gateway_port,
         protection_domains => $protection_domains,
-        storage_pools => $storage_pools,
-        provisioning_type => $provisioning_type,
-        openstack_version => 'juno',
-        siolib_file => 'siolib-1.2.5.tar.gz',
-        nova_patch => "${version}.diff",
-        nova_config_file => $nova_config_file,
+        storage_pools      => $storage_pools,
+        provisioning_type  => $provisioning_type,
+        openstack_version  => 'juno',
+        siolib_file        => 'siolib-1.2.5.tar.gz',
+        nova_patch         => "${version}.diff",
+        nova_config_file   => $nova_config_file,
       } ->
 
       scaleio_openstack::file_from_source { 'scaleio driver for nova':
