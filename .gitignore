@@ -1,8 +1,9 @@
 pkg/*
 spec/fixtures/modules
+spec/fixtures/manifests
 .vagrant
 .project
 **.DS_Store
 .buildpath
 .pydevproject
-
+Gemfile.lock

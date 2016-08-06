@@ -1,8 +1,6 @@
 require 'rubygems'
 require 'puppetlabs_spec_helper/module_spec_helper'
-require 'shared_examples'
 
-#require 'puppet-openstack_spec_helper/defaults'
 require 'rspec-puppet'
 require 'rspec-puppet-facts'
 require 'rspec/core/rake_task'
