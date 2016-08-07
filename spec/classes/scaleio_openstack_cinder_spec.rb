@@ -21,31 +21,34 @@
 require 'spec_helper'
 
 describe 'scaleio_openstack::cinder', :type => :class  do
+  
 
   let :default_params do {
     :ensure                     => 'present',    # could be present or absent
     :gateway_user               => 'admin',
     :gateway_port               => '4443',
-    :gateway_password   => 'password',
-    :gateway_ip         => '1.2.3.4',
-    :protection_domains => 'pd1',
-    :storage_pools      => 'sp1',
+    :gateway_password           => 'password',
+    :gateway_ip                 => '1.2.3.4',
+    :protection_domains         => 'pd1',
+    :storage_pools              => 'sp1',
     :verify_server_certificate  => 'False',
-    :force_delete               => 'True',
     :round_volume_capacity      => 'True',
     :scaleio_cinder_config_file => '/etc/cinder/cinder_scaleio.config',
     :default_lvm_backend        => 'lvmdriver',}
   end
   let (:params) { default_params }
-  let (:content) { /rest_server_ip = 1.2.3.4\nrest_server_port = 4443\nrest_server_username = admin\nrest_server_password = password\nprotection_domain_name = pd1\nstorage_pools = pd1:sp1\nstorage_pool_name = sp1\nround_volume_capacity = True\nforce_delete = True\nverify_server_certificate = False\n/ }
+  let (:content) { /rest_server_ip = 1.2.3.4\nrest_server_port = 4443\nrest_server_username = admin\nrest_server_password = password\nprotection_domain_name = pd1\nstorage_pools = pd1:sp1\nstorage_pool_name = sp1\nround_volume_capacity = True\nverify_server_certificate = False\n/ }
+
 
   it { is_expected.to contain_class('scaleio_openstack::cinder')}
   it { is_expected.to contain_notify('Configure Cinder to use ScaleIO cluster')}
 
 ### NOT INSTALLED
   context 'when cinder is not installed on the node' do
-    let (:facts) do
-      {:cinder_path => nil,}
+    let (:facts) do {
+      :cinder_path => nil,
+      :osfamily => 'Debian',
+    }
     end
     it { is_expected.not_to raise_error() }
     it { should_not contain_file_from_source(/scaleio driver for cinder/) }
@@ -58,6 +61,7 @@ describe 'scaleio_openstack::cinder', :type => :class  do
     let (:facts) do {
       :cinder_path      => '/some/fake/path',
       :cinder_version   => '2014.1.1',
+      :osfamily => 'Debian',
     } end
     it { is_expected.to raise_error(Puppet::Error, /Version 2014.1.1 isn't supported./)}
   end
@@ -66,7 +70,8 @@ describe 'scaleio_openstack::cinder', :type => :class  do
   context 'cinder Juno is installed on the node' do
     let (:facts) {{
       :cinder_path      => '/some/fake/path',
-      :cinder_version   => '2014.2.2'
+      :cinder_version   => '2014.2.2',
+      :osfamily => 'Debian',
     }}
 
     it { is_expected.not_to raise_error() }
@@ -160,7 +165,8 @@ describe 'scaleio_openstack::cinder', :type => :class  do
   context 'cinder Kilo is installed on the node' do
     let (:facts) {{
       :cinder_path      => '/some/fake/path',
-      :cinder_version   => '2015.1.1'
+      :cinder_version   => '2015.1.1',
+      :osfamily => 'Debian',
     }}
 
     it { is_expected.not_to raise_error() }
@@ -339,7 +345,8 @@ describe 'scaleio_openstack::cinder', :type => :class  do
   context 'cinder Liberty is installed on the node' do
     let (:facts) {{
       :cinder_path      => '/some/fake/path',
-      :cinder_version   => '7.1.1'
+      :cinder_version   => '7.1.1',
+      :osfamily => 'Debian',
     }}
 
     it { is_expected.not_to raise_error() }
@@ -433,4 +440,3 @@ describe 'scaleio_openstack::cinder', :type => :class  do
     it { should contain_service('cinder-volume').with_ensure('running')}
   end
 end
-

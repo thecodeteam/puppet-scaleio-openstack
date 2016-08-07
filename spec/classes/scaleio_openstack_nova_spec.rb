@@ -27,16 +27,24 @@ describe 'scaleio_openstack::nova', :type => :class do
   let :default_params do {
     :ensure              => 'present',
     :gateway_user        => 'admin',
+    :gateway_password    => "ASD_asd_021_ds",
+    :gateway_ip          => "1.2.3.4",
     :gateway_port        => '4443',
-    :nova_compute_conf_file_name => 'nova.conf',
+    :protection_domains  => 'pd1',
+    :storage_pools       => 'sp1',
+    :provisioning_type   => 'thick',
+    :nova_config_file    => 'nova.conf',
   }
   end
   let (:params) { default_params }
 
+
   it { is_expected.to contain_notify('Configuring Compute node for ScaleIO integration')}
   describe 'nova is not installed on the node' do
-    let (:facts) do
-      {:nova_path => nil,}
+    let (:facts) do {
+      :nova_path => nil,
+      :osfamily => 'Debian',
+    }
     end
 
     it { should_not contain_file_from_source('scaleio driver for nova') }
@@ -48,9 +56,11 @@ describe 'scaleio_openstack::nova', :type => :class do
 
 ### LIBERTY
     context 'when nova version is 12.0.1' do
-      let (:facts) do
-        {:nova_path => '/some/fake/path',
-         :nova_version => '12.0.1-ubuntu1'}
+      let (:facts) do {
+        :nova_path => '/some/fake/path',
+        :nova_version => '12.0.1-ubuntu1',
+        :osfamily => 'Debian',
+      }
       end
 
       it { is_expected.to contain_notify("Detected nova version: 12.0.1") }
@@ -150,9 +160,11 @@ describe 'scaleio_openstack::nova', :type => :class do
 
 ### KILO
     context 'when nova version is 2015.1.1' do
-      let (:facts) do
-       {:nova_path => '/some/fake/path',
-        :nova_version => '2015.1.1-ubuntu1'}
+      let (:facts) do {
+        :nova_path => '/some/fake/path',
+        :nova_version => '2015.1.1-ubuntu1',
+        :osfamily => 'Debian',
+      }
       end
 
       it { is_expected.to contain_notify("Detected nova version: 2015.1.1") }
@@ -319,9 +331,11 @@ describe 'scaleio_openstack::nova', :type => :class do
 
 ### JUNO
     context 'when nova version is 2014.2.2' do
-      let (:facts) do
-       {:nova_path => '/some/fake/path',
-        :nova_version => '2014.2.2-ubuntu1'}
+      let (:facts) do {
+        :nova_path => '/some/fake/path',
+        :nova_version => '2014.2.2-ubuntu1',
+        :osfamily => 'Debian',
+      }
       end
 
       it { is_expected.to contain_notify("Detected nova version: 2014.2.2") }
@@ -445,7 +459,9 @@ describe 'scaleio_openstack::nova', :type => :class do
     context 'when nova version is fake' do
       let (:facts) do {
         :nova_path => '/some/fake/path',
-        :nova_version => 'fake-ubuntu1'}
+        :nova_version => 'fake-ubuntu1',
+        :osfamily => 'Debian',
+      }
       end
       it { is_expected.to raise_error(Puppet::Error, /Version fake-ubuntu1 isn't supported./)}
     end
