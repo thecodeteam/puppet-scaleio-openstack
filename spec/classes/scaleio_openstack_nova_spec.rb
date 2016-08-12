@@ -177,17 +177,17 @@ describe 'scaleio_openstack::nova', :type => :class do
         :gateway_user => 'admin',
         :gateway_port => '4443',
         :openstack_version => 'mitaka',
-        :siolib_file => 'siolib-1.4.5.tar.gz',
+        :siolib_file => 'siolib-1.5.5.tar.gz',
         :nova_patch => "13.0.0.diff",)}
 
-      it { is_expected.to contain_file("/tmp/siolib-1.4.5.tar.gz").with(
-        :source => "puppet:///modules/scaleio_openstack/mitaka/siolib-1.4.5.tar.gz")}
+      it { is_expected.to contain_file("/tmp/siolib-1.5.5.tar.gz").with(
+        :source => "puppet:///modules/scaleio_openstack/mitaka/siolib-1.5.5.tar.gz")}
 
       it { is_expected.to contain_package('python-pip').with_ensure('present')}
       it { is_expected.to contain_package('patch').with_ensure('present')}
 
       it { is_expected.to contain_exec('siolib').with(
-        :command => "pip install /tmp/siolib-1.4.5.tar.gz",
+        :command => "pip install /tmp/siolib-1.5.5.tar.gz",
         :path => '/bin:/usr/bin:/usr/local/bin')}
 
       it 'contains nova filter file' do
