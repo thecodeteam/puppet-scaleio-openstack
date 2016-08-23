@@ -31,23 +31,38 @@ class scaleio_openstack::nova(
     Scaleio_openstack::File_from_source <| |> ~> Service[$nova_compute_service]
     Scaleio_openstack::Nova_common <| |> ~> Service[$nova_compute_service]
 
-    # Array of custom MOS versions, if a version is not in the array default patch will be applied,
-    # in case of new custom mos patch it is needed to add its version into this table.
-    $custom_mos_versions = [
-      '30', '31', '46', '48', # mos6.1
-      '19662', '19676', '19695', # mos7.0 (for 2015.1.1 but copy of 2015.1.3.diff)
-      '43', '21', #mos8
-    ]
     $version_str = split($::nova_version, '-')
     $core_version = $version_str[0]
-    $custom_version_str = split($version_str[1], 'mos')
-    if count($custom_version_str) > 1 and $custom_version_str[1] in $custom_mos_versions {
-      $custom_version = $custom_version_str[1]
-    } else {
-      $custom_version = ''
+
+    $custom_canonical_version_str = split($version_str[1], 'cloud')
+    $custom_mos_version_str = split($version_str[1], 'mos')
+    if count($custom_mos_version_str) > 1 {
+      # Array of custom MOS versions, if a version is not in the array default patch will be applied,
+      # in case of new custom mos patch it is needed to add its version into this table.
+      $custom_mos_versions = [
+        '30', '31', '46', '48', # mos6.1
+        '19662', '19676', '19695', # mos7.0 (for 2015.1.1 but copy of 2015.1.3.diff)
+        '43', '21', #mos8
+      ]
+
+      $custom_mos_version = $custom_mos_version_str[1]
+      if $custom_mos_version in $custom_mos_versions {
+        $version = "${core_version}-mos${custom_mos_version}"
+      } else {
+        $version = $core_version
+      }
     }
-    if $custom_version and $custom_version != '' {
-      $version = "${core_version}-mos${custom_version}"
+    elsif count($custom_canonical_version_str) > 1 {
+      $custom_canonical_versions = {
+        '12.0.4' => ['1']
+      }
+
+      $custom_canonical_version = $custom_canonical_version_str[1]
+      if $core_version in $custom_canonical_versions and $custom_canonical_version in $custom_canonical_versions[$core_version] {
+        $version = "${core_version}-cloud${custom_canonical_version}"
+      } else {
+        $version = $core_version
+      }
     }
     else {
       $version = $core_version
