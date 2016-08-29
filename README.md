@@ -25,7 +25,7 @@ should be created in OpenStack.
 * ScaleIO 2.0
 * Ubuntu 14.04
 * Linux kernel 4.2.0-30-generic and 3.13.0-83-generic
-* OpenStack Juno, Kilo, Liberty
+* OpenStack Juno, Kilo, Liberty, Mitaka
 
 ### Setup Requirements
 
@@ -47,7 +47,7 @@ Common code:
   * init.pp - utility functions
 
 Files:
-  * juno, kilo and liberty
+  * juno, kilo, liberty, mitaka
   * for cinder and nova
 
 ## Usage example
@@ -89,7 +89,6 @@ keys and the pertinent maximum limitation key: sio:iops_limit, sio:bandwidth_lim
 3. Cinder configuration addition:
   * provisioning_type for Juno and Kilo (thin or thick)
   * san_thin_provision for Liberty (true or false)
-
 
 ## Contact information
 
