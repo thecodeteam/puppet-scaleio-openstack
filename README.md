@@ -18,6 +18,7 @@ should be created in OpenStack.
 * Modifies cinder.conf
 * Adds cinder_scaleio.config for Juno and Kilo versions
 * Patches cinder python files
+* config-drive=False is set in nova config because config drive live migration is not supported
 
 ### Tested with
 
