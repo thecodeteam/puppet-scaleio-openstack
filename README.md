@@ -23,8 +23,7 @@ should be created in OpenStack.
 
 * Puppet 3.*, 4.*
 * ScaleIO 2.0
-* Ubuntu 14.04
-* Linux kernel 4.2.0-30-generic and 3.13.0-83-generic
+* Ubuntu 14.04, Centos 6, Centos 7
 * OpenStack Juno, Kilo, Liberty, Mitaka
 
 ### Setup Requirements
