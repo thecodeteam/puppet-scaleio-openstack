@@ -41,7 +41,7 @@ class scaleio_openstack::nova(
       # in case of new custom mos patch it is needed to add its version into this table.
       $custom_mos_versions = [
         '30', '31', '46', '48', # mos6.1
-        '19662', '19676', '19695', # mos7.0 (for 2015.1.1 but copy of 2015.1.3.diff)
+        '19662', '19676', '19695', '19696', # mos7.0 (for 2015.1.1 but copy of 2015.1.3.diff)
         '43', '21', #mos8
       ]
 
