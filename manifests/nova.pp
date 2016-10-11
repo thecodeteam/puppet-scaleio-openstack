@@ -87,7 +87,7 @@ class scaleio_openstack::nova(
         nova_config_file   => $nova_config_file,
       }
     }
-    elsif $core_version in ['13.0.0', '13.1.0', '13.1.1'] {
+    elsif $core_version in ['13.0.0', '13.1.0', '13.1.1', '13.1.2'] {
       notify { "Detected nova version ${version} - treat as Mitaka": }
 
       scaleio_openstack::nova_common { 'nova common for Mitaka':
