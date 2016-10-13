@@ -138,7 +138,7 @@ class scaleio_openstack::cinder (
       notify { "Detected cinder version ${version} - treat as Liberty": }
 
       file { '/tmp/9e70f2c4.diff':
-        source  => "puppet:///modules/scaleio_openstack/liberty/cinder/9e70f2c4.diff",
+        source  => 'puppet:///modules/scaleio_openstack/liberty/cinder/9e70f2c4.diff',
         require => Scaleio_openstack::File_from_source['scaleio driver for cinder']
       } ->
       exec { 'os-brick patch':
@@ -156,7 +156,7 @@ class scaleio_openstack::cinder (
         ensure    => $ensure,
         dir       => "${::cinder_path}/volume/drivers/emc",
         file_name => 'scaleio_ext.py',
-        src_dir   => "liberty/cinder"
+        src_dir   => 'liberty/cinder'
       } ->
       ini_setting { 'scaleio volume_driver':
         path    => $cinder_config_file,
@@ -164,7 +164,7 @@ class scaleio_openstack::cinder (
         setting => 'volume_driver',
         value   => 'cinder.volume.drivers.emc.scaleio_ext.ScaleIODriver',
       } ->
-      scaleio_openstack::configure_new_versions { "patch liberty cinder conf":
+      scaleio_openstack::configure_new_versions { 'patch liberty cinder conf':
         ensure                    => $ensure,
         cinder_config_file        => $cinder_config_file,
         enabled_backends          => $enabled_backends,
@@ -188,7 +188,7 @@ class scaleio_openstack::cinder (
         ensure    => $ensure,
         dir       => "${::cinder_path}/volume/drivers/emc",
         file_name => 'scaleio_ext.py',
-        src_dir   => "mitaka/cinder"
+        src_dir   => 'mitaka/cinder'
       } ->
       ini_setting { 'scaleio volume_driver':
         path    => $cinder_config_file,
@@ -196,7 +196,7 @@ class scaleio_openstack::cinder (
         setting => 'volume_driver',
         value   => 'cinder.volume.drivers.emc.scaleio_ext.ScaleIODriver',
       } ->
-      scaleio_openstack::configure_new_versions { "patch mitaka cinder conf":
+      scaleio_openstack::configure_new_versions { 'patch mitaka cinder conf':
         ensure                    => $ensure,
         cinder_config_file        => $cinder_config_file,
         enabled_backends          => $enabled_backends,
@@ -216,7 +216,7 @@ class scaleio_openstack::cinder (
     elsif $version_array[0] == '9' {
       notify { "Detected cinder version ${version} - treat as Newton": }
 
-      scaleio_openstack::configure_new_versions { "patch newton cinder conf":
+      scaleio_openstack::configure_new_versions { 'patch newton cinder conf':
         ensure                    => $ensure,
         cinder_config_file        => $cinder_config_file,
         enabled_backends          => $enabled_backends,
