@@ -167,95 +167,27 @@ class scaleio_openstack::cinder (
         file_name => 'scaleio_ext.py',
         src_dir   => "${version_name}/cinder"
       } ->
-      ini_setting { 'enabled_backends':
-        path    => $cinder_config_file,
-        section => 'DEFAULT',
-        setting => 'enabled_backends',
-        value   => $scaleio_openstack::cinder::enabled_backends,
-      } ->
-      ini_setting { 'san_thin_provision':
-        path    => $cinder_config_file,
-        section => 'scaleio',
-        setting => 'san_thin_provision',
-        value   => $san_thin_provision,
-      } ->
       ini_setting { 'scaleio volume_driver':
         path    => $cinder_config_file,
         section => 'scaleio',
         setting => 'volume_driver',
         value   => 'cinder.volume.drivers.emc.scaleio_ext.ScaleIODriver',
       } ->
-      ini_setting { 'scaleio volume_backend_name':
-        path    => $cinder_config_file,
-        section => 'scaleio',
-        setting => 'volume_backend_name',
-        value   => 'scaleio',
-      } ->
-      ini_setting { 'scaleio sio_round_volume_capacity':
-        path    => $cinder_config_file,
-        section => 'scaleio',
-        setting => 'sio_round_volume_capacity',
-        value   => $round_volume_capacity,
-      } ->
-      ini_setting { 'scaleio sio_verify_server_certificate':
-        path    => $cinder_config_file,
-        section => 'scaleio',
-        setting => 'sio_verify_server_certificate',
-        value   => $verify_server_certificate,
-      } ->
-      ini_setting { 'scaleio sio_server_certificate_path':
-        path    => $cinder_config_file,
-        section => 'scaleio',
-        setting => 'sio_server_certificate_path',
-        value   => $server_certificate_path,
-      } ->
-      ini_setting { 'scaleio sio_unmap_volume_before_deletion':
-        path    => $cinder_config_file,
-        section => 'scaleio',
-        setting => 'sio_unmap_volume_before_deletion',
-        value   => 'True',
-      } ->
-      ini_setting { 'scaleio san_ip':
-        path    => $cinder_config_file,
-        section => 'scaleio',
-        setting => 'san_ip',
-        value   => $gateway_ip,
-      } ->
-      ini_setting { 'scaleio sio_rest_server_port':
-        path    => $cinder_config_file,
-        section => 'scaleio',
-        setting => 'sio_rest_server_port',
-        value   => $gateway_port,
-      } ->
-      ini_setting { 'scaleio san_login':
-        path    => $cinder_config_file,
-        section => 'scaleio',
-        setting => 'san_login',
-        value   => $gateway_user,
-      } ->
-      ini_setting { 'scaleio san_password':
-        path    => $cinder_config_file,
-        section => 'scaleio',
-        setting => 'san_password',
-        value   => $gateway_password,
-      } ->
-      ini_setting { 'scaleio sio_protection_domain_name':
-        path    => $cinder_config_file,
-        section => 'scaleio',
-        setting => 'sio_protection_domain_name',
-        value   => $default_protection_domain,
-      } ->
-      ini_setting { 'scaleio sio_storage_pools':
-        path    => $cinder_config_file,
-        section => 'scaleio',
-        setting => 'sio_storage_pools',
-        value   => $pools_list,
-      } ->
-      ini_setting { 'scaleio sio_storage_pool_name':
-        path    => $cinder_config_file,
-        section => 'scaleio',
-        setting => 'sio_storage_pool_name',
-        value   => $default_storage_pool,
+      scaleio_openstack::configure_new_versions { "patch ${version_name} cinder conf":
+        ensure                     => $ensure,
+        cinder_config_file         => $cinder_config_file,
+        enabled_backends           => $enabled_backends,
+        san_thin_provision         => $san_thin_provision,
+        gateway_user               => $gateway_user,
+        gateway_password           => $gateway_password,
+        gateway_ip                 => $gateway_ip,
+        gateway_port               => $gateway_port,
+        verify_server_certificate  => $verify_server_certificate,
+        server_certificate_path    => $server_certificate_path,
+        round_volume_capacity      => $round_volume_capacity,
+        default_protection_domain  => $default_protection_domain,
+        pools_list                 => $pools_list,
+        default_storage_pool       => $default_storage_pool,
       }
     }
     else {
@@ -276,7 +208,6 @@ define scaleio_openstack::patch_common(
     'thin'  => 'ThinProvisioned',
     default => 'ThickProvisioned'
   }
-
   file { $scaleio_cinder_config_file:
     ensure  => $ensure,
     content => template('scaleio_openstack/cinder_scaleio.conf.erb'),
@@ -286,7 +217,6 @@ define scaleio_openstack::patch_common(
     service => 'cinder',
     notify  => Service[$cinder_volume_service]
   } ->
-
   ini_setting { 'enabled_backends':
     path    => $cinder_config_file,
     section => 'DEFAULT',
@@ -310,6 +240,108 @@ define scaleio_openstack::patch_common(
     section => 'scaleio',
     setting => 'volume_backend_name',
     value   => 'scaleio',
+  }
+}
+
+define scaleio_openstack::configure_new_versions(
+  $ensure                     = present,    # could be present or absent
+  $cinder_config_file         = undef,
+  $enabled_backends           = undef,
+  $san_thin_provision         = undef,
+  $gateway_user               = undef,
+  $gateway_password           = undef,
+  $gateway_ip                 = undef,
+  $gateway_port               = undef,
+  $verify_server_certificate  = undef,
+  $server_certificate_path    = undef,
+  $round_volume_capacity      = undef,
+  $default_protection_domain  = undef,
+  $pools_list                 = undef,
+  $default_storage_pool       = undef,
+) {
+  ini_setting { 'enabled_backends':
+    path    => $cinder_config_file,
+    section => 'DEFAULT',
+    setting => 'enabled_backends',
+    value   => $enabled_backends,
+  } ->
+  ini_setting { 'san_thin_provision':
+    path    => $cinder_config_file,
+    section => 'scaleio',
+    setting => 'san_thin_provision',
+    value   => $san_thin_provision,
+  } ->
+  ini_setting { 'scaleio volume_backend_name':
+    path    => $cinder_config_file,
+    section => 'scaleio',
+    setting => 'volume_backend_name',
+    value   => 'scaleio',
+  } ->
+  ini_setting { 'scaleio sio_round_volume_capacity':
+    path    => $cinder_config_file,
+    section => 'scaleio',
+    setting => 'sio_round_volume_capacity',
+    value   => $round_volume_capacity,
+  } ->
+  ini_setting { 'scaleio sio_verify_server_certificate':
+    path    => $cinder_config_file,
+    section => 'scaleio',
+    setting => 'sio_verify_server_certificate',
+    value   => $verify_server_certificate,
+  } ->
+  ini_setting { 'scaleio sio_server_certificate_path':
+    path    => $cinder_config_file,
+    section => 'scaleio',
+    setting => 'sio_server_certificate_path',
+    value   => $server_certificate_path,
+  } ->
+  ini_setting { 'scaleio sio_unmap_volume_before_deletion':
+    path    => $cinder_config_file,
+    section => 'scaleio',
+    setting => 'sio_unmap_volume_before_deletion',
+    value   => 'True',
+  } ->
+  ini_setting { 'scaleio san_ip':
+    path    => $cinder_config_file,
+    section => 'scaleio',
+    setting => 'san_ip',
+    value   => $gateway_ip,
+  } ->
+  ini_setting { 'scaleio sio_rest_server_port':
+    path    => $cinder_config_file,
+    section => 'scaleio',
+    setting => 'sio_rest_server_port',
+    value   => $gateway_port,
+  } ->
+  ini_setting { 'scaleio san_login':
+    path    => $cinder_config_file,
+    section => 'scaleio',
+    setting => 'san_login',
+    value   => $gateway_user,
+  } ->
+  ini_setting { 'scaleio san_password':
+    path    => $cinder_config_file,
+    section => 'scaleio',
+    setting => 'san_password',
+    value   => $gateway_password,
+  } ->
+  ini_setting { 'scaleio sio_protection_domain_name':
+    path    => $cinder_config_file,
+    section => 'scaleio',
+    setting => 'sio_protection_domain_name',
+    value   => $default_protection_domain,
+  } ->
+  ini_setting { 'scaleio sio_storage_pools':
+    path    => $cinder_config_file,
+    section => 'scaleio',
+    setting => 'sio_storage_pools',
+    value   => $pools_list,
+  } ->
+  ini_setting { 'scaleio sio_storage_pool_name':
+    path    => $cinder_config_file,
+    section => 'scaleio',
+    setting => 'sio_storage_pool_name',
+    value   => $default_storage_pool,
   }
 }
 
