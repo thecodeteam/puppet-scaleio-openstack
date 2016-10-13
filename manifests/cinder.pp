@@ -37,6 +37,8 @@ class scaleio_openstack::cinder (
     $version = $version_str[0]
     $version_array = split($version, '\.')
 
+    $san_thin_provision = $provisioning_type ? { 'thin'  => 'True', default => 'False' }
+
     package { ['patch']:
       ensure => present,
     } ->
@@ -132,40 +134,29 @@ class scaleio_openstack::cinder (
         enabled_backends           => $enabled_backends,
       }
     }
-    elsif $version_array[0] == '7' or $version_array[0] == '8' {
-      notify { "Detected cinder version ${version} - treat as Liberty/Mitaka": }
+    elsif $version_array[0] == '7' {
+      notify { "Detected cinder version ${version} - treat as Liberty": }
 
-      $san_thin_provision = $provisioning_type ? {
-        'thin'  => 'True',
-        default => 'False'
-      }
-      $version_name = $version_array[0] ? {
-        '7' => 'liberty',
-        '8' => 'mitaka'
-      }
-
-      if $version_array[0] == '7' and $::os_brick_path {
-        file { '/tmp/9e70f2c4.diff':
-          source  => "puppet:///modules/scaleio_openstack/${version_name}/cinder/9e70f2c4.diff",
-          require => Scaleio_openstack::File_from_source['scaleio driver for cinder']
-        } ->
-        exec { 'os-brick patch':
-          onlyif  => "test ${ensure} = present && patch -p 2 -i /tmp/9e70f2c4.diff -d ${::os_brick_path} -b -f --dry-run",
-          command => "patch -p 2 -i /tmp/9e70f2c4.diff -d ${::os_brick_path} -b",
-          path    => '/bin:/usr/bin',
-        } ->
-        exec { 'os-brick un-patch':
-          onlyif  => "test ${ensure} = absent && patch -p 2 -i /tmp/9e70f2c4.diff -d ${::os_brick_path} -b -R -f --dry-run",
-          command => "patch -p 2 -i /tmp/9e70f2c4.diff -d ${::os_brick_path} -b -R",
-          path    => '/bin:/usr/bin',
-        }
-      }
+      file { '/tmp/9e70f2c4.diff':
+        source  => "puppet:///modules/scaleio_openstack/liberty/cinder/9e70f2c4.diff",
+        require => Scaleio_openstack::File_from_source['scaleio driver for cinder']
+      } ->
+      exec { 'os-brick patch':
+        onlyif  => "test ${ensure} = present && patch -p 2 -i /tmp/9e70f2c4.diff -d ${::os_brick_path} -b -f --dry-run",
+        command => "patch -p 2 -i /tmp/9e70f2c4.diff -d ${::os_brick_path} -b",
+        path    => '/bin:/usr/bin',
+      } ->
+      exec { 'os-brick un-patch':
+        onlyif  => "test ${ensure} = absent && patch -p 2 -i /tmp/9e70f2c4.diff -d ${::os_brick_path} -b -R -f --dry-run",
+        command => "patch -p 2 -i /tmp/9e70f2c4.diff -d ${::os_brick_path} -b -R",
+        path    => '/bin:/usr/bin',
+      } ->
 
       scaleio_openstack::file_from_source {'scaleio driver for cinder':
         ensure    => $ensure,
         dir       => "${::cinder_path}/volume/drivers/emc",
         file_name => 'scaleio_ext.py',
-        src_dir   => "${version_name}/cinder"
+        src_dir   => "liberty/cinder"
       } ->
       ini_setting { 'scaleio volume_driver':
         path    => $cinder_config_file,
@@ -173,21 +164,73 @@ class scaleio_openstack::cinder (
         setting => 'volume_driver',
         value   => 'cinder.volume.drivers.emc.scaleio_ext.ScaleIODriver',
       } ->
-      scaleio_openstack::configure_new_versions { "patch ${version_name} cinder conf":
-        ensure                     => $ensure,
-        cinder_config_file         => $cinder_config_file,
-        enabled_backends           => $enabled_backends,
-        san_thin_provision         => $san_thin_provision,
-        gateway_user               => $gateway_user,
-        gateway_password           => $gateway_password,
-        gateway_ip                 => $gateway_ip,
-        gateway_port               => $gateway_port,
-        verify_server_certificate  => $verify_server_certificate,
-        server_certificate_path    => $server_certificate_path,
-        round_volume_capacity      => $round_volume_capacity,
-        default_protection_domain  => $default_protection_domain,
-        pools_list                 => $pools_list,
-        default_storage_pool       => $default_storage_pool,
+      scaleio_openstack::configure_new_versions { "patch liberty cinder conf":
+        ensure                    => $ensure,
+        cinder_config_file        => $cinder_config_file,
+        enabled_backends          => $enabled_backends,
+        san_thin_provision        => $san_thin_provision,
+        gateway_user              => $gateway_user,
+        gateway_password          => $gateway_password,
+        gateway_ip                => $gateway_ip,
+        gateway_port              => $gateway_port,
+        verify_server_certificate => $verify_server_certificate,
+        server_certificate_path   => $server_certificate_path,
+        round_volume_capacity     => $round_volume_capacity,
+        default_protection_domain => $default_protection_domain,
+        pools_list                => $pools_list,
+        default_storage_pool      => $default_storage_pool,
+      }
+    }
+    elsif $version_array[0] == '8' {
+      notify { "Detected cinder version ${version} - treat as Mitaka": }
+
+      scaleio_openstack::file_from_source {'scaleio driver for cinder':
+        ensure    => $ensure,
+        dir       => "${::cinder_path}/volume/drivers/emc",
+        file_name => 'scaleio_ext.py',
+        src_dir   => "mitaka/cinder"
+      } ->
+      ini_setting { 'scaleio volume_driver':
+        path    => $cinder_config_file,
+        section => 'scaleio',
+        setting => 'volume_driver',
+        value   => 'cinder.volume.drivers.emc.scaleio_ext.ScaleIODriver',
+      } ->
+      scaleio_openstack::configure_new_versions { "patch mitaka cinder conf":
+        ensure                    => $ensure,
+        cinder_config_file        => $cinder_config_file,
+        enabled_backends          => $enabled_backends,
+        san_thin_provision        => $san_thin_provision,
+        gateway_user              => $gateway_user,
+        gateway_password          => $gateway_password,
+        gateway_ip                => $gateway_ip,
+        gateway_port              => $gateway_port,
+        verify_server_certificate => $verify_server_certificate,
+        server_certificate_path   => $server_certificate_path,
+        round_volume_capacity     => $round_volume_capacity,
+        default_protection_domain => $default_protection_domain,
+        pools_list                => $pools_list,
+        default_storage_pool      => $default_storage_pool,
+      }
+    }
+    elsif $version_array[0] == '9' {
+      notify { "Detected cinder version ${version} - treat as Newton": }
+
+      scaleio_openstack::configure_new_versions { "patch newton cinder conf":
+        ensure                    => $ensure,
+        cinder_config_file        => $cinder_config_file,
+        enabled_backends          => $enabled_backends,
+        san_thin_provision        => $san_thin_provision,
+        gateway_user              => $gateway_user,
+        gateway_password          => $gateway_password,
+        gateway_ip                => $gateway_ip,
+        gateway_port              => $gateway_port,
+        verify_server_certificate => $verify_server_certificate,
+        server_certificate_path   => $server_certificate_path,
+        round_volume_capacity     => $round_volume_capacity,
+        default_protection_domain => $default_protection_domain,
+        pools_list                => $pools_list,
+        default_storage_pool      => $default_storage_pool,
       }
     }
     else {
