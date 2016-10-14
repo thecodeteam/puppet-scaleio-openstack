@@ -293,7 +293,7 @@ describe 'scaleio_openstack::cinder', :type => :class  do
     it { is_expected.not_to raise_error() }
     it { is_expected.to contain_package('patch').with_ensure('present')}
     it { is_expected.to contain_service('cinder-volume').with_ensure('running')}
-    it { is_expected.to contain_notify ("Detected cinder version 7.1.1 - treat as Liberty/Mitaka")}
+    it { is_expected.to contain_notify ("Detected cinder version 7.1.1 - treat as Liberty")}
 
     it 'contains scaleio driver for cinder' do
       is_expected.to contain_scaleio_openstack__file_from_source('scaleio driver for cinder').with(
