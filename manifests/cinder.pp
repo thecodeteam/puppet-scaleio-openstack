@@ -150,7 +150,7 @@ class scaleio_openstack::cinder (
         onlyif  => "test ${ensure} = absent && patch -p 2 -i /tmp/9e70f2c4.diff -d ${::os_brick_path} -b -R -f --dry-run",
         command => "patch -p 2 -i /tmp/9e70f2c4.diff -d ${::os_brick_path} -b -R",
         path    => '/bin:/usr/bin',
-      } ->
+      }
 
       scaleio_openstack::file_from_source {'scaleio driver for cinder':
         ensure    => $ensure,
