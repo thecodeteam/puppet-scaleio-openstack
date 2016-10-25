@@ -41,8 +41,9 @@ class scaleio_openstack::nova(
       # in case of new custom mos patch it is needed to add its version into this table.
       $custom_mos_versions = [
         '30', '31', '46', '48', # mos6.1
-        '19662', '19676', '19695', '19696', # mos7.0 (for 2015.1.1 but copy of 2015.1.3.diff)
-        '43', '21', #mos8
+        '19662', '19676', '19695', '19696', '19698', # mos7.0 (for 2015.1.1 but copy of 2015.1.3.diff)
+        '43', '21', '10', #mos8
+        '43', '20', #mos9
       ]
 
       $custom_mos_version = $custom_mos_version_str[1]
@@ -101,6 +102,24 @@ class scaleio_openstack::nova(
         provisioning_type  => $provisioning_type,
         openstack_version  => 'mitaka',
         siolib_file        => 'siolib-1.5.5.tar.gz',
+        nova_patch         => "${version}.diff",
+        nova_config_file   => $nova_config_file,
+      }
+    }
+    elsif $core_version in ['14.0.1'] {
+      notify { "Detected nova version ${version} - treat as Newton": }
+
+      scaleio_openstack::nova_common { 'nova common for Newton':
+        ensure             => $ensure,
+        gateway_user       => $gateway_user,
+        gateway_password   => $gateway_password,
+        gateway_ip         => $gateway_ip,
+        gateway_port       => $gateway_port,
+        protection_domains => $protection_domains,
+        storage_pools      => $storage_pools,
+        provisioning_type  => $provisioning_type,
+        openstack_version  => 'newton',
+        siolib_file        => 'siolib-1.6.5.tar.gz',
         nova_patch         => "${version}.diff",
         nova_config_file   => $nova_config_file,
       }
