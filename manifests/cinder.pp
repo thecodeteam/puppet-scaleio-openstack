@@ -216,6 +216,12 @@ class scaleio_openstack::cinder (
     elsif $version_array[0] == '9' {
       notify { "Detected cinder version ${version} - treat as Newton": }
 
+      ini_setting { 'scaleio volume_driver':
+        path    => $cinder_config_file,
+        section => 'scaleio',
+        setting => 'volume_driver',
+        value   => 'cinder.volume.drivers.emc.scaleio.ScaleIODriver',
+      } ->
       scaleio_openstack::configure_new_versions { 'patch newton cinder conf':
         ensure                    => $ensure,
         cinder_config_file        => $cinder_config_file,
