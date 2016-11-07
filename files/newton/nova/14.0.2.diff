@@ -30,7 +30,7 @@ index 971f7e9..d694ef7 100644
 +        """Create a new SIO image object"""
 +        super(SIOImage, self).__init__(FORMAT_RAW)
 diff --git a/nova/virt/libvirt/driver.py b/nova/virt/libvirt/driver.py
-index a239135..1879da4 100644
+index a239135..f1e15e5 100644
 --- a/nova/virt/libvirt/driver.py
 +++ b/nova/virt/libvirt/driver.py
 @@ -106,6 +106,7 @@ from nova.virt.libvirt import migration as libvirt_migrate
@@ -121,15 +121,15 @@ index a239135..1879da4 100644
               and not CONF.ephemeral_storage_encryption.enabled
               and not CONF.workarounds.disable_libvirt_livesnapshot):
              live_snapshot = True
-@@ -2555,6 +2577,8 @@ class LibvirtDriver(driver.ComputeDriver):
-         # cleanup rescue volume
-         lvm.remove_volumes([lvmdisk for lvmdisk in self._lvm_disks(instance)
-                                 if lvmdisk.endswith('.rescue')])
-+        if CONF.libvirt.images_type == 'sio':
-+            LibvirtDriver._get_sio_driver().cleanup_rescue_volumes(instance)
-         if CONF.libvirt.images_type == 'rbd':
+@@ -2559,6 +2581,8 @@ class LibvirtDriver(driver.ComputeDriver):
              filter_fn = lambda disk: (disk.startswith(instance.uuid) and
                                        disk.endswith('.rescue'))
+             LibvirtDriver._get_rbd_driver().cleanup_volumes(filter_fn)
++        if CONF.libvirt.images_type == 'sio':
++            LibvirtDriver._get_sio_driver().cleanup_rescue_volumes(instance)
+ 
+     def poll_rebooting_instances(self, timeout, instances):
+         pass
 @@ -2812,10 +2836,11 @@ class LibvirtDriver(driver.ComputeDriver):
                        specified_fs=specified_fs)
  
@@ -483,9 +483,8 @@ index c24721a..9ba0bbf 100644
          }
  
 diff --git a/nova/virt/libvirt/storage/sio_utils.py b/nova/virt/libvirt/storage/sio_utils.py
-new file mode 100644
-index 0000000..372be19
---- /dev/null
+index e69de29..372be19 100644
+--- a/nova/virt/libvirt/storage/sio_utils.py
 +++ b/nova/virt/libvirt/storage/sio_utils.py
 @@ -0,0 +1,445 @@
 +# Copyright (c) 2015 EMC Corporation
