@@ -70,7 +70,7 @@ class scaleio_openstack::nova(
     }
 
     notify { "Detected nova version: ${version}": }
-    if $core_version in ['12.0.0', '12.0.1', '12.0.2', '12.0.3', '12.0.4'] {
+    if $core_version in ['12.0.0', '12.0.1', '12.0.2', '12.0.3', '12.0.4', '12.0.5'] {
       notify { "Detected nova version ${version} - treat as Liberty": }
 
       scaleio_openstack::nova_common { 'nova common for Liberty':
