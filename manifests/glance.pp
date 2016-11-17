@@ -62,7 +62,6 @@ class scaleio_openstack::glance (
           file_name     => 'glance_rootwrap.conf',
           src_dir       => '.',
           dst_file_name => 'rootwrap.conf',
-          mode          => '0755',
         } ->
         scaleio_openstack::file_from_source { 'glance_sudoers':
           ensure    => $ensure,
