@@ -4,6 +4,7 @@
 # Helping define for internal use
 define scaleio_openstack::glance_config(
   $config_file,
+  $cinder_region
 ) {
   if $config_file and $config_file != '' {
     ini_subsetting { "${config_file}: stores":
@@ -20,6 +21,13 @@ define scaleio_openstack::glance_config(
       section => 'glance_store',
       setting => 'default_store',
       value   => 'cinder',
+    } ->
+    ini_setting { "${config_file}: cinder_os_region_name":
+      ensure  => 'present',
+      path    => $config_file,
+      section => 'glance_store',
+      setting => 'cinder_os_region_name',
+      value   => $cinder_region,
     }
   }
 }
@@ -27,8 +35,9 @@ define scaleio_openstack::glance_config(
 
 class scaleio_openstack::glance (
   $ensure         = present,                          # could be present or absent
-  $glance_config  = '/etc/glance/glance-api.conf',    # if empty or undef the config actions be skipped
+  $glance_config  = '/etc/glance/glance-api.conf',    # if empty or undef the config actions will be skipped
   $glare_config   = '/etc/glance/glance-glare.conf',
+  $cinder_region  = 'RegionOne',
 )
 {
   notify {'Configure Glance to use ScaleIO cluster via Cinder': }
@@ -73,11 +82,13 @@ class scaleio_openstack::glance (
           'Debian' => ['glance-api', 'glance-registry', 'glance-glare'],
         }
         glance_config { "glance config: ${glance_config}":
-          config_file => $glance_config,
-          require     => Scaleio_openstack::File_from_source['glance_sudoers'],
+          config_file   => $glance_config,
+          cinder_region => $cinder_region,
+          require       => Scaleio_openstack::File_from_source['glance_sudoers'],
         } ->
         glance_config { "glare config: ${glare_config}":
-          config_file => $glare_config,
+          config_file   => $glare_config,
+          cinder_region => $cinder_region,
         } ~>
         service { $glance_services:
           ensure => running,
