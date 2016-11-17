@@ -37,40 +37,42 @@ class scaleio_openstack::glance (
     warning('Glance is not installed on this node')
   }
   else {
-    $glance_config_provided = $glance_config and $glance_config != ''
-    $glare_config_provided = $glare_config and $glare_config != ''
-    if $glance_config_provided or $glare_config_provided {
-      $version_str = split($::glance_version, '-')
-      $version = $version_str[0]
-      $version_array = split($version, '\.')
-      if $version_array[0] >= '12' {
-        notify { "Detected glance version ${version}": }
+    $version_str = split($::glance_version, '-')
+    $version = $version_str[0]
+    $version_array = split($version, '\.')
+    if $version_array[0] >= '12' {
+      notify { "Detected glance version ${version}": }
+      package { ['python-cinderclient', 'python-os-brick', 'python-oslo.rootwrap']:
+        ensure => 'present',
+      } ->
+      scaleio_openstack::scaleio_filter_file { 'glance filter file':
+        ensure  => $ensure,
+        service => 'glance',
+      } ->
+      scaleio_openstack::file_from_source { 'glance_rootwrap':
+        ensure        => $ensure,
+        dir           => '/etc/glance',
+        file_name     => 'glance_rootwrap.conf',
+        src_dir       => '.',
+        dst_file_name => 'rootwrap.conf',
+      } ->
+      scaleio_openstack::file_from_source { 'glance_sudoers':
+        ensure    => $ensure,
+        dir       => '/etc/sudoers.d',
+        file_name => 'glance_sudoers',
+        src_dir   => '.',
+      }
+
+      $glance_config_provided = $glance_config and $glance_config != ''
+      $glare_config_provided = $glare_config and $glare_config != ''
+      if $glance_config_provided or $glare_config_provided {
         $glance_services = $::osfamily ? {
           'RedHat' => ['openstack-glance-api', 'openstack-glance-registry', 'openstack-glance-glare'],
           'Debian' => ['glance-api', 'glance-registry', 'glance-glare'],
         }
-        package { ['python-cinderclient', 'python-os-brick', 'python-oslo.rootwrap']:
-          ensure => 'present',
-        } ->
-        scaleio_openstack::scaleio_filter_file { 'glance filter file':
-          ensure  => $ensure,
-          service => 'glance',
-        } ->
-        scaleio_openstack::file_from_source { 'glance_rootwrap':
-          ensure        => $ensure,
-          dir           => '/etc/glance',
-          file_name     => 'glance_rootwrap.conf',
-          src_dir       => '.',
-          dst_file_name => 'rootwrap.conf',
-        } ->
-        scaleio_openstack::file_from_source { 'glance_sudoers':
-          ensure    => $ensure,
-          dir       => '/etc/sudoers.d',
-          file_name => 'glance_sudoers',
-          src_dir   => '.',
-        } ->
         glance_config { "glance config: ${glance_config}":
           config_file => $glance_config,
+          require     => Scaleio_openstack::File_from_source['glance_sudoers'],
         } ->
         glance_config { "glare config: ${glare_config}":
           config_file => $glare_config,
@@ -80,11 +82,8 @@ class scaleio_openstack::glance (
           enable => true,
         }
       }
-      else {
-        fail("Version ${version} of python-glance isn't supported.")
-      }
     } else {
-      notify { 'Skip glance configuration because of no config file provided': }
+      fail("Version ${version} of python-glance isn't supported.")
     }
   }
 }
