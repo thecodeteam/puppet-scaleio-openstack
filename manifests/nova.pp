@@ -107,7 +107,7 @@ class scaleio_openstack::nova(
         nova_config_file   => $nova_config_file,
       }
     }
-    elsif $core_version in ['14.0.1', '14.0.2'] {
+    elsif $core_version in ['14.0.1', '14.0.2', '14.0.3'] {
       notify { "Detected nova version ${version} - treat as Newton": }
 
       scaleio_openstack::nova_common { 'nova common for Newton':
