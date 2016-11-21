@@ -51,9 +51,8 @@ class scaleio_openstack::glance (
     $version_array = split($version, '\.')
     if $version_array[0] >= '12' {
       notify { "Detected glance version ${version}": }
-      package { ['python-cinderclient',
-                 'python-os-brick',
-                 $::osfamily ? { 'Debian' => 'python-oslo.rootwrap', 'RedHat' => 'python-oslo-rootwrap'}]:
+      package { ['python-cinderclient','python-os-brick',
+                $::osfamily ? { 'Debian' => 'python-oslo.rootwrap', 'RedHat' => 'python-oslo-rootwrap'}]:
         ensure => 'present',
       } ->
       scaleio_openstack::scaleio_filter_file { 'glance filter file':
