@@ -282,8 +282,8 @@ describe 'scaleio_openstack::cinder', :type => :class  do
     end
   end
 
-### LIBERTY/MITAKA
-  context 'cinder Liberty/Mitaka is installed on the node' do
+### LIBERTY
+  context 'cinder Liberty is installed on the node' do
     let (:facts) do
       default_facts.merge({
       :cinder_path      => '/some/fake/path',
@@ -309,6 +309,21 @@ describe 'scaleio_openstack::cinder', :type => :class  do
         :group => 'root')
     end
 
+    it { is_expected.to contain_scaleio_openstack__configure_new_versions('patch liberty cinder conf').with(
+      :ensure                    => 'present',
+      :cinder_config_file        => '/etc/cinder/cinder.conf',
+      :enabled_backends          => 'scaleio',
+      :san_thin_provision        => 'False',
+      :gateway_user              => 'admin',
+      :gateway_password          => 'password',
+      :gateway_ip                => '1.2.3.4',
+      :gateway_port              => '4443',
+      :verify_server_certificate => 'False',
+      :server_certificate_path   => nil,
+      :round_volume_capacity     => 'True',
+      :default_protection_domain => 'pd1',
+      :pools_list                => 'pd1:sp1',
+      :default_storage_pool      => 'sp1')}
     it { is_expected.to contain_ini_setting('enabled_backends').with(
       :path    => '/etc/cinder/cinder.conf',
       :section => 'DEFAULT',
@@ -385,7 +400,7 @@ describe 'scaleio_openstack::cinder', :type => :class  do
       :setting => 'sio_server_certificate_path',
       :value   => nil)}
 
-    context 'cinder Liberty/Mitaka is installed on the node' do
+    context 'cinder Liberty is installed on the node' do
       let (:facts) do
         default_facts.merge({
           :cinder_path      => '/some/fake/path',
@@ -406,9 +421,232 @@ describe 'scaleio_openstack::cinder', :type => :class  do
           :command => "patch -p 2 -i /tmp/9e70f2c4.diff -d /os/brick/path -b -R",
           :path    => '/bin:/usr/bin')
       end
-
     end
   end
+
+### MITAKA
+  context 'cinder Mitaka is installed on the node' do
+    let (:facts) do
+      default_facts.merge({
+      :cinder_path      => '/some/fake/path',
+      :cinder_version   => '8.1.1',})
+    end
+
+    it { is_expected.not_to raise_error() }
+    it { is_expected.to contain_package('patch').with_ensure('present')}
+    it { is_expected.to contain_service('cinder-volume').with_ensure('running')}
+    it { is_expected.to contain_notify ("Detected cinder version 8.1.1 - treat as Mitaka")}
+
+    it 'contains scaleio driver for cinder' do
+      is_expected.to contain_scaleio_openstack__file_from_source('scaleio driver for cinder').with(
+        :ensure    => 'present',
+        :dir       => "/some/fake/path/volume/drivers/emc",
+        :file_name => 'scaleio_ext.py',
+        :src_dir   => "mitaka/cinder")
+      is_expected.to contain_file("/some/fake/path/volume/drivers/emc/scaleio_ext.py").with(
+        :ensure => 'present',
+        :source => "puppet:///modules/scaleio_openstack/mitaka/cinder/scaleio_ext.py",
+        :mode  => '0644',
+        :owner => 'root',
+        :group => 'root')
+    end
+    it { is_expected.to contain_scaleio_openstack__configure_new_versions('patch mitaka cinder conf').with(
+      :ensure                    => 'present',
+      :cinder_config_file        => '/etc/cinder/cinder.conf',
+      :enabled_backends          => 'scaleio',
+      :san_thin_provision        => 'False',
+      :gateway_user              => 'admin',
+      :gateway_password          => 'password',
+      :gateway_ip                => '1.2.3.4',
+      :gateway_port              => '4443',
+      :verify_server_certificate => 'False',
+      :server_certificate_path   => nil,
+      :round_volume_capacity     => 'True',
+      :default_protection_domain => 'pd1',
+      :pools_list                => 'pd1:sp1',
+      :default_storage_pool      => 'sp1')}
+    it { is_expected.to contain_ini_setting('enabled_backends').with(
+      :path    => '/etc/cinder/cinder.conf',
+      :section => 'DEFAULT',
+      :setting => 'enabled_backends',
+      :value   => 'scaleio')}
+    it { is_expected.to contain_ini_setting('scaleio volume_driver').with(
+      :path    => '/etc/cinder/cinder.conf',
+      :section => 'scaleio',
+      :setting => 'volume_driver',
+      :value   => 'cinder.volume.drivers.emc.scaleio_ext.ScaleIODriver')}
+    it { is_expected.to contain_ini_setting('scaleio volume_backend_name').with(
+      :path    => '/etc/cinder/cinder.conf',
+      :section => 'scaleio',
+      :setting => 'volume_backend_name',
+      :value   => 'scaleio')}
+    it { is_expected.to contain_ini_setting('scaleio sio_round_volume_capacity').with(
+      :path    => '/etc/cinder/cinder.conf',
+      :section => 'scaleio',
+      :setting => 'sio_round_volume_capacity',
+      :value   => 'True')}
+    it { is_expected.to contain_ini_setting('scaleio sio_verify_server_certificate').with(
+      :path    => '/etc/cinder/cinder.conf',
+      :section => 'scaleio',
+      :setting => 'sio_verify_server_certificate',
+      :value   => 'False')}
+    it { is_expected.to contain_ini_setting('scaleio sio_unmap_volume_before_deletion').with(
+      :path    => '/etc/cinder/cinder.conf',
+      :section => 'scaleio',
+      :setting => 'sio_unmap_volume_before_deletion',
+      :value   => 'True')}
+    it { is_expected.to contain_ini_setting('scaleio san_ip').with(
+      :path    => '/etc/cinder/cinder.conf',
+      :section => 'scaleio',
+      :setting => 'san_ip',
+      :value   => '1.2.3.4')}
+    it { is_expected.to contain_ini_setting('scaleio sio_rest_server_port').with(
+      :path    => '/etc/cinder/cinder.conf',
+      :section => 'scaleio',
+      :setting => 'sio_rest_server_port',
+      :value   => '4443')}
+    it { is_expected.to contain_ini_setting('scaleio san_login').with(
+      :path    => '/etc/cinder/cinder.conf',
+      :section => 'scaleio',
+      :setting => 'san_login',
+      :value   => 'admin')}
+    it { is_expected.to contain_ini_setting('scaleio san_password').with(
+      :path    => '/etc/cinder/cinder.conf',
+      :section => 'scaleio',
+      :setting => 'san_password',
+      :value   => 'password')}
+    it { is_expected.to contain_ini_setting('scaleio sio_protection_domain_name').with(
+      :path    => '/etc/cinder/cinder.conf',
+      :section => 'scaleio',
+      :setting => 'sio_protection_domain_name',
+      :value   => 'pd1')}
+    it { is_expected.to contain_ini_setting('scaleio sio_storage_pools').with(
+      :path    => '/etc/cinder/cinder.conf',
+      :section => 'scaleio',
+      :setting => 'sio_storage_pools',
+      :value   => 'pd1:sp1')}
+    it { is_expected.to contain_ini_setting('scaleio sio_storage_pool_name').with(
+      :path    => '/etc/cinder/cinder.conf',
+      :section => 'scaleio',
+      :setting => 'sio_storage_pool_name',
+      :value   => 'sp1')}
+    it { is_expected.to contain_ini_setting('san_thin_provision').with(
+      :path    => '/etc/cinder/cinder.conf',
+      :section => 'scaleio',
+      :setting => 'san_thin_provision',
+      :value   => 'False')}
+    it { is_expected.to contain_ini_setting('scaleio sio_server_certificate_path').with(
+      :path    => '/etc/cinder/cinder.conf',
+      :section => 'scaleio',
+      :setting => 'sio_server_certificate_path',
+      :value   => nil)}
+  end
+
+### NEWTON
+  context 'cinder Newton is installed on the node' do
+    let (:facts) do
+      default_facts.merge({
+      :cinder_path      => '/some/fake/path',
+      :cinder_version   => '9.1.1',})
+    end
+
+    it { is_expected.not_to raise_error() }
+    it { is_expected.to contain_package('patch').with_ensure('present')}
+    it { is_expected.to contain_service('cinder-volume').with_ensure('running')}
+    it { is_expected.to contain_notify ("Detected cinder version 9.1.1 - treat as Newton")}
+
+    it { is_expected.to contain_scaleio_openstack__configure_new_versions('patch newton cinder conf').with(
+      :ensure                    => 'present',
+      :cinder_config_file        => '/etc/cinder/cinder.conf',
+      :enabled_backends          => 'scaleio',
+      :san_thin_provision        => 'False',
+      :gateway_user              => 'admin',
+      :gateway_password          => 'password',
+      :gateway_ip                => '1.2.3.4',
+      :gateway_port              => '4443',
+      :verify_server_certificate => 'False',
+      :server_certificate_path   => nil,
+      :round_volume_capacity     => 'True',
+      :default_protection_domain => 'pd1',
+      :pools_list                => 'pd1:sp1',
+      :default_storage_pool      => 'sp1')}
+    it { is_expected.to contain_ini_setting('enabled_backends').with(
+      :path    => '/etc/cinder/cinder.conf',
+      :section => 'DEFAULT',
+      :setting => 'enabled_backends',
+      :value   => 'scaleio')}
+    it { is_expected.to contain_ini_setting('scaleio volume_driver').with(
+      :path    => '/etc/cinder/cinder.conf',
+      :section => 'scaleio',
+      :setting => 'volume_driver',
+      :value   => 'cinder.volume.drivers.emc.scaleio.ScaleIODriver')}
+    it { is_expected.to contain_ini_setting('scaleio volume_backend_name').with(
+      :path    => '/etc/cinder/cinder.conf',
+      :section => 'scaleio',
+      :setting => 'volume_backend_name',
+      :value   => 'scaleio')}
+    it { is_expected.to contain_ini_setting('scaleio sio_round_volume_capacity').with(
+      :path    => '/etc/cinder/cinder.conf',
+      :section => 'scaleio',
+      :setting => 'sio_round_volume_capacity',
+      :value   => 'True')}
+    it { is_expected.to contain_ini_setting('scaleio sio_verify_server_certificate').with(
+      :path    => '/etc/cinder/cinder.conf',
+      :section => 'scaleio',
+      :setting => 'sio_verify_server_certificate',
+      :value   => 'False')}
+    it { is_expected.to contain_ini_setting('scaleio sio_unmap_volume_before_deletion').with(
+      :path    => '/etc/cinder/cinder.conf',
+      :section => 'scaleio',
+      :setting => 'sio_unmap_volume_before_deletion',
+      :value   => 'True')}
+    it { is_expected.to contain_ini_setting('scaleio san_ip').with(
+      :path    => '/etc/cinder/cinder.conf',
+      :section => 'scaleio',
+      :setting => 'san_ip',
+      :value   => '1.2.3.4')}
+    it { is_expected.to contain_ini_setting('scaleio sio_rest_server_port').with(
+      :path    => '/etc/cinder/cinder.conf',
+      :section => 'scaleio',
+      :setting => 'sio_rest_server_port',
+      :value   => '4443')}
+    it { is_expected.to contain_ini_setting('scaleio san_login').with(
+      :path    => '/etc/cinder/cinder.conf',
+      :section => 'scaleio',
+      :setting => 'san_login',
+      :value   => 'admin')}
+    it { is_expected.to contain_ini_setting('scaleio san_password').with(
+      :path    => '/etc/cinder/cinder.conf',
+      :section => 'scaleio',
+      :setting => 'san_password',
+      :value   => 'password')}
+    it { is_expected.to contain_ini_setting('scaleio sio_protection_domain_name').with(
+      :path    => '/etc/cinder/cinder.conf',
+      :section => 'scaleio',
+      :setting => 'sio_protection_domain_name',
+      :value   => 'pd1')}
+    it { is_expected.to contain_ini_setting('scaleio sio_storage_pools').with(
+      :path    => '/etc/cinder/cinder.conf',
+      :section => 'scaleio',
+      :setting => 'sio_storage_pools',
+      :value   => 'pd1:sp1')}
+    it { is_expected.to contain_ini_setting('scaleio sio_storage_pool_name').with(
+      :path    => '/etc/cinder/cinder.conf',
+      :section => 'scaleio',
+      :setting => 'sio_storage_pool_name',
+      :value   => 'sp1')}
+    it { is_expected.to contain_ini_setting('san_thin_provision').with(
+      :path    => '/etc/cinder/cinder.conf',
+      :section => 'scaleio',
+      :setting => 'san_thin_provision',
+      :value   => 'False')}
+    it { is_expected.to contain_ini_setting('scaleio sio_server_certificate_path').with(
+      :path    => '/etc/cinder/cinder.conf',
+      :section => 'scaleio',
+      :setting => 'sio_server_certificate_path',
+      :value   => nil)}
+  end
+
 ### UNSUPPORTED.
   context 'cinder unsupported version' do
     let (:facts) do
