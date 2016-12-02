@@ -13,8 +13,16 @@
   ],
   "operatingsystem_support": [
     {
-      "operatingsystemrelease": ["14"],
+      "operatingsystemrelease": ["14.04", "16.04"],
       "operatingsystem": "Ubuntu"
+    },
+    {
+      "operatingsystemrelease": ["6", "7"],
+      "operatingsystem": "RedHat"
+    },
+    {
+      "operatingsystemrelease": ["6", "7"],
+      "operatingsystem": "CentOS"
     }
   ],
   "requirements": [
