@@ -4,9 +4,9 @@
   "name": "cloudscaling-scaleio_openstack",
   "summary": "Puppet library for configuration of Openstack to use Scaleio 2.0 cluster",
   "license": "Apache License, Version 2.0",
-  "source": "https://github.com/emccode/puppet-scaleio-openstack",
-  "project_page": "https://github.com/emccode/puppet-scaleio-openstack",
-  "issues_url": "https://github.com/emccode/puppet-scaleio-openstack/issues",
+  "source": "https://github.com/codedellemc/puppet-scaleio-openstack",
+  "project_page": "https://github.com/codedellemc/puppet-scaleio-openstack",
+  "issues_url": "https://github.com/codedellemc/puppet-scaleio-openstack/issues",
   "dependencies": [
     {"name": "puppetlabs-stdlib", "version_requirement": ">= 4.3.2"},
     {"name": "puppetlabs-inifile", "version_requirement": ">= 1.0.0"}

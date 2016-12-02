@@ -12,24 +12,27 @@ should be created in OpenStack.
 
 ### What Puppet-ScaleIO-Openstack affects
 
-* Adds rootwrap filters
+* Adds rootwrap filters for nova/cinder/glance
 * Modifies nova.conf
 * Patches nova python files
 * Modifies cinder.conf
 * Adds cinder_scaleio.config for Juno and Kilo versions
-* Patches cinder python files
+* Patches/Adds cinder python files for some versions
 * config-drive=False is set in nova config because config drive live migration is not supported
+* Patches glance.conf
+* Adds glance user to sudoers
 
 ### Tested with
 
 * Puppet 3.*, 4.*
-* ScaleIO 2.0
-* Ubuntu 14.04, Centos 6, Centos 7
-* OpenStack Juno, Kilo, Liberty, Mitaka
+* ScaleIO 2.0+
+* Ubuntu 14.04/16.04, Centos 6, Centos 7
+* OpenStack Juno, Kilo, Liberty, Mitaka, Newton
 
 ### Setup Requirements
 
 Requires nova-compute and/or cinder installed on the node along with ScaleIO SDC.
+Also ScaleIO SDC must be installed on glance controller node if cinder with ScaleIO backend is used for glance store.
 
 ### Beginning with scaleio
   ```
@@ -38,17 +41,19 @@ Requires nova-compute and/or cinder installed on the node along with ScaleIO SDC
 
 ## Structure and specifics
 
-There are 2 manifests to use:
+There are 3 manifests to use:
   * cinder.pp - installs scaleio cinder driver, updates cinder services configurations and notifies services
-  * nova.pp   - installs scale nova driver and notify nova service
+  * nova.pp   - installs scaleio nova driver and notify nova service
+  * glance.pp   - configures glance to use cinder as default store
 
 Common code:
   * nova_common.pp - common patching and configuration of nova for all versions of OpenStack
   * init.pp - utility functions
+  * and some internal manifests...
 
 Files:
-  * juno, kilo, liberty, mitaka
-  * for cinder and nova
+  * juno, kilo, liberty, mitaka, newton
+  * for cinder, nova and glance
 
 ## Usage example
   ```
@@ -58,6 +63,18 @@ Files:
     gateway_port        => 4443,
     gateway_user        => 'admin',
     gateway_password    => 'admin',
+  }
+
+  class {'scaleio_openstack::nova':
+    ensure           => present,
+    gateway_user     => 'admin',
+    gateway_password => 'password',
+    gateway_ip       => '1.2.3.4',
+    gateway_port     => 4443,
+  }
+
+  class {'scaleio_openstack::glance':
+    ensure => present,
   }
 
   class {'scaleio_openstack::volume_type':
@@ -70,15 +87,11 @@ Files:
     os_username         => 'admin',
     os_auth_url         => 'http://127.0.0.1:5000/v2.0/'
   }
-
-  class {'scaleio_openstack::nova':
-    ensure => present,
-  }
   ```
 
 ## Nova and cinder extensions
 
-1. ScaleIO ephemeral storage backend for nova is supported (see README here https://github.com/emccode/nova-scaleio-ephemeral )
+1. ScaleIO ephemeral storage backend for nova is supported (see README here https://github.com/codedellemc/nova-scaleio-ephemeral )
 
 2. Volume type QoS additions. The user can specify those in order to get QoS correlated with
 the volume size. The driver will always choose the minimum between the scaling QoS
@@ -88,8 +101,8 @@ keys and the pertinent maximum limitation key: sio:iops_limit, sio:bandwidth_lim
 
 3. Cinder configuration addition:
   * provisioning_type for Juno and Kilo (thin or thick)
-  * san_thin_provision for Liberty (true or false)
+  * san_thin_provision for Liberty and later (true or false)
 
 ## Contact information
 
-- [Project Bug Tracker](https://github.com/emccode/puppet-scaleio-openstack/issues)
+- [Project Bug Tracker](https://github.com/codedellemc/puppet-scaleio-openstack/issues)
