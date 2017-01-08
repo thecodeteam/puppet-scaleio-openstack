@@ -57,6 +57,7 @@ class scaleio_openstack::nova(
       $custom_canonical_versions = {
         '12.0.4' => ['1'],
         '12.0.5' => ['0'],
+        '12.0.6' => ['0'],
       }
 
       $custom_canonical_version = $custom_canonical_version_str[1]
